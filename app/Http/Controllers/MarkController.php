@@ -16,7 +16,7 @@ class MarkController extends Controller
     public function index()
     {
         $marks = Mark::with(['student', 'subject', 'class'])->paginate(15);
-        return view('modules.marks.index', compact('marks'));
+        return view('modules.marks.entry', compact('marks'));
     }
 
     /**
@@ -26,7 +26,7 @@ class MarkController extends Controller
     {
         $classes = ClassModel::where('is_active', true)->get();
         $subjects = Subject::where('is_active', true)->get();
-        return view('modules.marks.create', compact('classes', 'subjects'));
+        return view('modules.marks.entry', compact('classes', 'subjects'));
     }
 
     /**

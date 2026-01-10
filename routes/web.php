@@ -9,6 +9,7 @@ use App\Http\Controllers\ClassCategoryController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\MarkController;
+
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PasswordChangeController;
@@ -18,6 +19,8 @@ use App\Http\Controllers\SchoolSettingController;
 use App\Models\Teacher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\AnnouncementController;
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -469,6 +472,31 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         Route::delete('settings/school-profile/delete-signature', [SchoolSettingController::class, 'deleteSignature'])
             ->name('settings.delete-signature');
     });
+
+    // Subject Management Routes
+    Route::resource('subjects', SubjectController::class);
+
+    // Marks Management Routes
+    Route::resource('marks', MarkController::class);
+    Route::get('marks-entry', [MarkController::class, 'create'])->name('marks.entry.form');
+    Route::post('marks-entry', [MarkController::class, 'entry'])->name('marks.entry');
+    Route::post('marks-store-multiple', [MarkController::class, 'storeMultiple'])->name('marks.store.multiple');
+    Route::get('report-card/{student}', [MarkController::class, 'reportCard'])->name('report.card');
+
+    // Announcement Management Routes
+    Route::resource('announcements', AnnouncementController::class);
+    Route::patch('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggle'])
+         ->name('announcements.toggle');
+
+    // Report Management Routes
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/create', [ReportController::class, 'create'])->name('reports.create');
+    Route::post('reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    Route::get('reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+    Route::get('reports/{report}/print', [ReportController::class, 'print'])->name('reports.print');
+    Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
+    Route::get('api/students-by-class', [ReportController::class, 'getStudentsByClass'])->name('api.students-by-class');
+
 
 });
 

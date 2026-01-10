@@ -16,15 +16,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,    // Create roles & permissions first
             AdminUserSeeder::class,     // Then create users with roles
             SchoolSettingSeeder::class,
-            ClassLevelSeeder::class,
-              NotificationSeeder::class,
-               ClassSeeder::class,
-               TeacherSeeder::class,
-              StudentSeeder::class,
-              SubjectSeeder::class,
-
-
-
+             ClassLevelSeeder::class,
+             AnnouncementSeeder::class,
 
         ]);
     }

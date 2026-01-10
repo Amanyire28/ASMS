@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
+use App\Models\Mark;
+use App\Models\ReportGeneration;
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -27,23 +30,34 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
-        // Get counts for dashboard stats
-        $stats = [
-            'students' => Student::count(),
-            'teachers' => Teacher::count(),
-            'classes' => ClassModel::count(),
-            'subjects' => Subject::count(),
-        ];
+        // Get counts
+        $totalStudents = Student::where('is_active', true)->count();
+        $totalTeachers = Teacher::where('is_active', true)->count();
+        $totalClasses = ClassModel::where('is_active', true)->count();
+        $totalSubjects = Subject::where('is_active', true)->count();
 
-        // For HTMX requests - return ONLY the inner content (no wrapper)
-        if ($request->header('HX-Request')) {
-            return response()
-                ->view('dashboard.partials.content', compact('stats'))
-                ->header('HX-Title', 'Dashboard - ' . config('app.name'));
-        }
+        // Get recent announcements
+        $recentAnnouncements = Announcement::active()
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
 
-        // For regular requests - return full page with layout
-        return view('dashboard.index', compact('stats'));
+        // Get recent reports
+        $recentReports = ReportGeneration::with(['student', 'generatedBy'])
+            ->orderBy('generated_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get recent activities (marks entered recently)
+        $recentActivities = Mark::with(['student', 'subject'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'totalStudents', 'totalTeachers', 'totalClasses', 'totalSubjects',
+            'recentAnnouncements', 'recentReports', 'recentActivities'
+        ));
     }
 
     /**

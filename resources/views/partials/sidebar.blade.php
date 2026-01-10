@@ -2,8 +2,8 @@
        x-data="sidebarData">
 
     <!-- Logo and Brand -->
-    <div class="px-4 py-6 border-b border-white/10 dark:border-gray-700 sidebar-header">
-        <div class="flex items-center gap-3 py-1">
+    <div class="p-4 border-b border-white/10 dark:border-gray-700 sidebar-header">
+        <div class="flex items-center gap-3">
 
             <!-- Logo Container -->
             <div class="w-11 h-11 rounded-full overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm ring-1 ring-white/10">
@@ -230,6 +230,19 @@
             <span class="font-medium">Subjects</span>
         </a>
         @endcanany
+
+
+        <a href="/admin/announcements"
+           @click="handleLinkClick()"
+           :class="{
+               'bg-white !text-maroon font-semibold': isActive('/admin/announcements'),
+               'text-white/90 hover:bg-white/20': !isActive('/admin/announcements')
+           }"
+           class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all duration-200">
+            <i class="fas fa-book w-5 text-center"></i>
+            <span class="font-medium">Announce</span>
+        </a>
+
 
         <!-- Marks Dropdown (Only if has permission) -->
         @canany(['marks.view', 'marks.entry'])
