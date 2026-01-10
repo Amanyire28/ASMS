@@ -76,69 +76,8 @@
                 </div>
 
                 <!-- Notifications - ALWAYS VISIBLE -->
-               <div class="relative" x-data="{
-    open: false,
-    notifications: [],
-    unreadCount: 0,
-    loading: true,
-    loadNotifications() {
-        this.loading = true;
-        fetch('{{ route("notifications.latest") }}')
-            .then(response => response.json())
-            .then(data => {
-                this.notifications = data.notifications;
-                this.loading = false;
-            });
-    },
-    loadUnreadCount() {
-        fetch('{{ route("notifications.unreadCount") }}')
-            .then(response => response.json())
-            .then(data => {
-                this.unreadCount = data.count;
-            });
-    },
-    markAsRead(id) {
-        fetch('{{ route("notifications.markAsRead", '') }}/' + id, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update local state
-                const notification = this.notifications.find(n => n.id === id);
-                if (notification) {
-                    notification.read_at = new Date().toISOString();
-                }
-                this.loadUnreadCount();
-            }
-        });
-    },
-    markAllAsRead() {
-        fetch('{{ route("notifications.markAllAsRead") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Mark all as read locally
-                this.notifications.forEach(notification => {
-                    notification.read_at = new Date().toISOString();
-                });
-                this.loadUnreadCount();
-            }
-        });
-    }
-}"
-x-init="loadNotifications(); loadUnreadCount();">
-    <button @click="open = !open; if(open) loadNotifications();"
+               <div class="relative" x-data="notificationSystem()" x-init="init()">
+    <button @click="toggleDropdown()"
         class="p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-maroon/10 hover:to-maroon/5 dark:hover:from-gray-600 rounded-2xl transition-all duration-300 group shadow-sm relative">
         <i class="fas fa-bell text-gray-700 dark:text-gray-300 text-lg group-hover:animate-pulse"></i>
         <span x-show="unreadCount > 0"
@@ -148,8 +87,8 @@ x-init="loadNotifications(); loadUnreadCount();">
     </button>
 
     <!-- Notifications Dropdown -->
-    <div x-show="open"
-        @click.away="open = false"
+    <div x-show="isOpen"
+        @click.away="isOpen = false"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 -translate-y-2"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -174,9 +113,10 @@ x-init="loadNotifications(); loadUnreadCount();">
             <!-- Mark All as Read Button -->
             <div x-show="unreadCount > 0" class="mt-3">
                 <button @click="markAllAsRead()"
-                        class="w-full text-center text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200">
+                        :disabled="isMarkingAll"
+                        class="w-full text-center text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fas fa-check-double mr-1"></i>
-                    Mark all as read
+                    <span x-text="isMarkingAll ? 'Processing...' : 'Mark all as read'"></span>
                 </button>
             </div>
         </div>
@@ -184,7 +124,7 @@ x-init="loadNotifications(); loadUnreadCount();">
         <!-- Notifications List -->
         <div class="max-h-96 overflow-y-auto">
             <!-- Loading State -->
-            <div x-show="loading" class="px-5 py-8">
+            <div x-show="isLoading" class="px-5 py-8">
                 <div class="flex flex-col items-center justify-center">
                     <div class="w-12 h-12 border-4 border-maroon/30 border-t-maroon rounded-full animate-spin"></div>
                     <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">Loading notifications...</p>
@@ -192,7 +132,7 @@ x-init="loadNotifications(); loadUnreadCount();">
             </div>
 
             <!-- Empty State -->
-            <div x-show="!loading && notifications.length === 0" class="px-5 py-8">
+            <div x-show="!isLoading && notifications.length === 0" class="px-5 py-8">
                 <div class="text-center">
                     <div class="inline-block p-4 bg-gray-100 dark:bg-gray-900 rounded-full mb-3">
                         <i class="fas fa-bell-slash text-gray-300 dark:text-gray-600 text-2xl"></i>
@@ -209,8 +149,8 @@ x-init="loadNotifications(); loadUnreadCount();">
                     <!-- Notification Icon -->
                     <div class="flex-shrink-0 relative">
                         <div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                             :class="notification.color.split(' ')[1] + ' ' + notification.color.split(' ')[0].replace('text-', 'bg-').replace('-600', '-100') + ' dark:from-' + notification.color.split(' ')[1].replace('bg-', '').replace('-50', '-900/30') + ' dark:to-' + notification.color.split(' ')[1].replace('bg-', '').replace('-100', '-800/20')">
-                            <i :class="notification.icon" class="text-lg"></i>
+                             :class="getNotificationColor(notification.type)">
+                            <i :class="getNotificationIcon(notification.type)" class="text-lg"></i>
                         </div>
                         <div x-show="!notification.read_at"
                              class="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center">
@@ -220,11 +160,12 @@ x-init="loadNotifications(); loadUnreadCount();">
 
                     <!-- Notification Content -->
                     <div class="ml-4 flex-1 min-w-0">
-                        <p class="font-semibold text-gray-900 dark:text-white text-sm" x-text="notification.data.message || 'Notification'"></p>
+                        <p class="font-semibold text-gray-900 dark:text-white text-sm"
+                           x-text="notification.data.message || notification.data.title || 'Notification'"></p>
                         <div class="flex items-center justify-between mt-2">
                             <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                 <i class="fas fa-clock mr-1 text-[10px]"></i>
-                                <span x-text="notification.created_at"></span>
+                                <span x-text="formatTime(notification.created_at)"></span>
                             </span>
                             <template x-if="notification.read_at">
                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs rounded-full">Read</span>
@@ -236,13 +177,15 @@ x-init="loadNotifications(); loadUnreadCount();">
                     <div class="flex flex-col items-center space-y-2 ml-2">
                         <template x-if="!notification.read_at">
                             <button @click="markAsRead(notification.id)"
-                                    class="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                    :disabled="notification.markingAsRead"
+                                    class="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors disabled:opacity-50"
                                     title="Mark as read">
                                 <i class="fas fa-check-circle text-sm"></i>
                             </button>
                         </template>
                         <button @click="deleteNotification(notification.id)"
-                                class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                :disabled="notification.deleting"
+                                class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-50"
                                 title="Delete notification">
                             <i class="fas fa-times text-sm"></i>
                         </button>
@@ -605,6 +548,23 @@ x-init="loadNotifications(); loadUnreadCount();">
     }
 </style>
 
+<style>
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+}
+</style>
+
 <script>
     // Toggle mobile search
     document.addEventListener('DOMContentLoaded', function() {
@@ -650,6 +610,278 @@ x-init="loadNotifications(); loadUnreadCount();">
         });
     });
 </script>
+
+<script>
+function notificationSystem() {
+    return {
+        isOpen: false,
+        notifications: [],
+        unreadCount: 0,
+        isLoading: false,
+        isMarkingAll: false,
+        refreshInterval: null,
+
+        init() {
+            this.loadNotifications();
+            this.loadUnreadCount();
+
+            // Set up real-time updates every 10 seconds
+            this.refreshInterval = setInterval(() => {
+                if (!this.isOpen) {
+                    this.loadUnreadCount();
+                }
+            }, 10000);
+
+            // Listen for new notifications via Laravel Echo (if you have it setup)
+            this.setupRealtime();
+        },
+
+        setupRealtime() {
+            // If you have Laravel Echo/Pusher setup
+            if (typeof Echo !== 'undefined') {
+                Echo.private(`App.Models.User.{{ auth()->id() }}`)
+                    .notification((notification) => {
+                        this.handleNewNotification(notification);
+                    });
+            }
+
+            // Also listen for browser events
+            document.addEventListener('new-notification', (e) => {
+                this.handleNewNotification(e.detail);
+            });
+        },
+
+        handleNewNotification(notification) {
+            // Add new notification to the top
+            this.notifications.unshift({
+                ...notification,
+                created_at: new Date().toISOString(),
+                read_at: null
+            });
+
+            // Update unread count
+            this.unreadCount++;
+
+            // Show a toast notification
+            this.showToast(notification);
+        },
+
+        showToast(notification) {
+            // Create and show a toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 max-w-sm z-50 animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 rounded-lg ${this.getNotificationColor(notification.type)} flex items-center justify-center">
+                            <i class="${this.getNotificationIcon(notification.type)}"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="font-semibold text-gray-900 dark:text-white text-sm">
+                            ${notification.data.message || notification.data.title || 'New Notification'}
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Just now
+                        </p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        },
+
+        toggleDropdown() {
+            this.isOpen = !this.isOpen;
+            if (this.isOpen) {
+                this.loadNotifications();
+            }
+        },
+
+        async loadNotifications() {
+            this.isLoading = true;
+            try {
+                const response = await fetch('{{ route("notifications.latest") }}');
+                const data = await response.json();
+                this.notifications = data.notifications.map(notification => ({
+                    ...notification,
+                    markingAsRead: false,
+                    deleting: false
+                }));
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async loadUnreadCount() {
+            try {
+                const response = await fetch('{{ route("notifications.unreadCount") }}');
+                const data = await response.json();
+                this.unreadCount = data.count;
+            } catch (error) {
+                console.error('Error loading unread count:', error);
+            }
+        },
+
+        async markAsRead(id) {
+            const notification = this.notifications.find(n => n.id === id);
+            if (!notification) return;
+
+            notification.markingAsRead = true;
+
+            try {
+                const response = await fetch('{{ route("notifications.markAsRead", '') }}/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Update notification locally without removing it
+                    notification.read_at = new Date().toISOString();
+                    this.unreadCount = Math.max(0, this.unreadCount - 1);
+                }
+            } catch (error) {
+                console.error('Error marking as read:', error);
+            } finally {
+                notification.markingAsRead = false;
+            }
+        },
+
+        async markAllAsRead() {
+            if (this.unreadCount === 0) return;
+
+            this.isMarkingAll = true;
+
+            try {
+                const response = await fetch('{{ route("notifications.markAllAsRead") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Mark all as read locally
+                    this.notifications.forEach(notification => {
+                        if (!notification.read_at) {
+                            notification.read_at = new Date().toISOString();
+                        }
+                    });
+                    this.unreadCount = 0;
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            } finally {
+                this.isMarkingAll = false;
+            }
+        },
+
+        async deleteNotification(id) {
+            const notification = this.notifications.find(n => n.id === id);
+            if (!notification) return;
+
+            if (!confirm('Are you sure you want to delete this notification?')) {
+                return;
+            }
+
+            notification.deleting = true;
+
+            try {
+                const response = await fetch('{{ route("notifications.destroy", '') }}/' + id, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Remove from local array
+                    const index = this.notifications.findIndex(n => n.id === id);
+                    if (index > -1) {
+                        this.notifications.splice(index, 1);
+                    }
+
+                    // Update unread count if notification was unread
+                    if (!notification.read_at) {
+                        this.unreadCount = Math.max(0, this.unreadCount - 1);
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+            }
+        },
+
+        getNotificationIcon(type) {
+            const icons = {
+                'App\\Notifications\\StudentRegistered': 'fas fa-user-plus',
+                'App\\Notifications\\TeacherAssigned': 'fas fa-chalkboard-teacher',
+                'App\\Notifications\\MarkEntered': 'fas fa-edit',
+                'App\\Notifications\\ReportGenerated': 'fas fa-chart-bar',
+                'App\\Notifications\\SystemAlert': 'fas fa-exclamation-triangle',
+                'App\\Notifications\\PasswordChanged': 'fas fa-key',
+                'App\\Notifications\\UserCreated': 'fas fa-user-plus',
+                'App\\Notifications\\PaymentReceived': 'fas fa-money-check-alt',
+                'App\\Notifications\\Announcement': 'fas fa-bullhorn',
+            };
+            return icons[type] || 'fas fa-bell';
+        },
+
+        getNotificationColor(type) {
+            const colors = {
+                'App\\Notifications\\StudentRegistered': 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+                'App\\Notifications\\TeacherAssigned': 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+                'App\\Notifications\\MarkEntered': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
+                'App\\Notifications\\ReportGenerated': 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+                'App\\Notifications\\SystemAlert': 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+                'App\\Notifications\\PasswordChanged': 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+                'App\\Notifications\\UserCreated': 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
+                'App\\Notifications\\PaymentReceived': 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+                'App\\Notifications\\Announcement': 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+            };
+            return colors[type] || 'bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400';
+        },
+
+        formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+
+            return date.toLocaleDateString();
+        }
+    };
+}
+</script>
+
 
 
 <script>

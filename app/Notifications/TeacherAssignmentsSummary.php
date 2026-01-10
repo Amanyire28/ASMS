@@ -17,8 +17,8 @@ class TeacherAssignmentsSummary extends Notification
     public function __construct($teacher, array $classes = [], array $subjects = [])
     {
         $this->teacher = $teacher;
-        $this->classes = $classes; // Array of ['class' => ClassModel, 'is_class_teacher' => bool]
-        $this->subjects = $subjects; // Array of Subject models
+        $this->classes = $classes; 
+        $this->subjects = $subjects; 
     }
 
     // In TeacherAssignmentsSummary.php
@@ -77,7 +77,7 @@ public function toDatabase($notifiable)
         'employee_id' => $employeeId,
         'classes' => $this->formatClassesData(),
         'subjects' => $this->formatSubjectsData(),
-        'message' => $message, // This should now include the details
+        'message' => $message, 
         'action_url' => route('teachers.show', $this->getSafeId($this->teacher)),
         'action_label' => 'View Teacher',
         'is_new_teacher' => $isNewTeacher,

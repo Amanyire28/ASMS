@@ -117,25 +117,26 @@ class NotificationController extends Controller
      * Get latest notifications (for AJAX)
      */
     public function getLatest()
-    {
-        $notifications = Auth::user()
-            ->notifications()
-            ->take(5)
-            ->get()
-            ->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'data' => $notification->data,
-                    'read_at' => $notification->read_at,
-                    'created_at' => $notification->created_at->diffForHumans(),
-                    'icon' => $this->getNotificationIcon($notification->type),
-                    'color' => $this->getNotificationColor($notification->type)
-                ];
-            });
+{
+    $notifications = Auth::user()
+        ->notifications()
+        ->latest()
+        ->take(5)
+        ->get()
+        ->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'data' => $notification->data,
+                'read_at' => $notification->read_at?->toISOString(),
+                'created_at' => $notification->created_at->toISOString(),
+                'icon' => $this->getNotificationIcon($notification->type),
+                'color' => $this->getNotificationColor($notification->type)
+            ];
+        });
 
-        return response()->json(['notifications' => $notifications]);
-    }
+    return response()->json(['notifications' => $notifications]);
+}
 
     /**
      * Helper: Get notification icon by type

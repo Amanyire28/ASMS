@@ -1103,9 +1103,7 @@ public function statistics()
 
 
 
-/**
- * Update teacher assignments (classes and subjects together)
- */
+
 /**
  * Update teacher assignments (classes and subjects together)
  */

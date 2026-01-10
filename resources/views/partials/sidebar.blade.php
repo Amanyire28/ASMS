@@ -2,8 +2,8 @@
        x-data="sidebarData">
 
     <!-- Logo and Brand -->
-    <div class="p-4 border-b border-white/10 dark:border-gray-700 sidebar-header">
-        <div class="flex items-center gap-3">
+    <div class="px-4 py-6 border-b border-white/10 dark:border-gray-700 sidebar-header">
+        <div class="flex items-center gap-3 py-1">
 
             <!-- Logo Container -->
             <div class="w-11 h-11 rounded-full overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm ring-1 ring-white/10">

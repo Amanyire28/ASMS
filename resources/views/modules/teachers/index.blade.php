@@ -125,7 +125,7 @@
         <!-- Teachers Grid View (Default) -->
         <div id="teachersGridView" class="p-6">
             @if($teachers->count() > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 @foreach($teachers as $teacher)
                 <div class="teacher-card bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden group hover:scale-[1.02]">
                     <div class="p-6">
@@ -250,19 +250,19 @@
                 <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
                         <tr>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 Teacher
                             </th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 ID & Contact
                             </th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 Assignments
                             </th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -270,7 +270,7 @@
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach($teachers as $teacher)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     @if($teacher->photo)
                                     <img src="{{ asset('storage/' . $teacher->photo) }}" alt="{{ $teacher->full_name }}"
@@ -286,12 +286,12 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $teacher->employee_id }}</div>
                                 <div class="text-sm text-gray-500 dark:text-gray-400">{{ $teacher->email }}</div>
                                 <div class="text-sm text-gray-500 dark:text-gray-400">{{ $teacher->phone }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900 dark:text-white">
                                     <i class="fas fa-chalkboard mr-1"></i> {{ $teacher->classes_count }} {{ Str::plural('Class', $teacher->classes_count) }}
                                 </div>
@@ -299,12 +299,12 @@
                                     <i class="fas fa-book mr-1"></i> {{ $teacher->subjects_count }} {{ Str::plural('Subject', $teacher->subjects_count) }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $teacher->is_active ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' }}">
                                     {{ $teacher->is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-2">
                                     <a href="{{ route('teachers.show', $teacher) }}" class="text-maroon dark:text-maroon-light hover:text-maroon-dark dark:hover:text-maroon-lighter">
                                         <i class="fas fa-eye"></i>

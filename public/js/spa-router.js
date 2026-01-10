@@ -39,11 +39,8 @@ class SPARouter {
                 href.startsWith('tel:') ||
                 link.hasAttribute('download') ||
                 link.getAttribute('target') === '_blank' ||
-
-                link.closest('form')  ||
-                link.hasAttribute('data-spa') && link.getAttribute('data-spa') ==='false')
-                 {
-
+                link.closest('form') ||
+                link.hasAttribute('data-spa') && link.getAttribute('data-spa') === 'false') {
                 return;
             }
 
@@ -71,7 +68,30 @@ class SPARouter {
             }
         });
 
+        // Listen for Alpine initialization to reinitialize on SPA navigation
+        document.addEventListener('alpine:initialized', () => {
+            console.log('🎯 Alpine.js initialized, setting up SPA integration');
+            this.setupAlpineSPAIntegration();
+        });
+
+        // If Alpine is already loaded
+        if (window.Alpine) {
+            this.setupAlpineSPAIntegration();
+        }
+
         console.log('✅ SPA Router initialized');
+    }
+
+    setupAlpineSPAIntegration() {
+        // Store original Alpine methods
+        if (window.Alpine) {
+            if (!window.Alpine.originalDiscover) {
+                window.Alpine.originalDiscover = window.Alpine.discover;
+            }
+            if (!window.Alpine.originalInitTree) {
+                window.Alpine.originalInitTree = window.Alpine.initTree;
+            }
+        }
     }
 
     /**
@@ -103,6 +123,9 @@ class SPARouter {
             // Show loading indicator
             this.showLoading();
 
+            // Clear any form validation errors
+            this.clearFormErrors();
+
             // Check cache
             const cacheKey = `${method}:${path}`;
             if (this.cacheEnabled && !forceReload && this.cache.has(cacheKey)) {
@@ -114,10 +137,12 @@ class SPARouter {
                     if (pushState) {
                         this.updateHistory(path);
                     }
-                    // Dispatch navigation event
-                    window.dispatchEvent(new CustomEvent('spa:navigated', {
-                        detail: { path }
-                    }));
+                    // Dispatch navigation event AFTER Alpine initialization
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('spa:navigated', {
+                            detail: { path }
+                        }));
+                    }, 100);
                     return;
                 }
             }
@@ -153,120 +178,270 @@ class SPARouter {
                 document.title = title;
             }
 
-            // Dispatch navigation event AFTER rendering
-            window.dispatchEvent(new CustomEvent('spa:navigated', {
-                detail: { path, response }
-            }));
+            // Dispatch navigation event AFTER rendering and Alpine initialization
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('spa:navigated', {
+                    detail: { path, response }
+                }));
+            }, 100);
 
         } catch (error) {
-            console.error('Navigation error:', error);
+
             this.handleError(error, path);
         } finally {
             this.hideLoading();
         }
     }
 
+    /**
+     * Fetch content from Laravel backend
+     */
+    async fetchContent(path, method = 'GET', data = null) {
+        const url = this.baseUrl + path;
+        const options = {
+            method,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': this.csrfToken,
+                'Accept': 'text/html, application/json',
+                'X-SPA-Request': 'true'
+            },
+            credentials: 'same-origin'
+        };
+
+        if (data) {
+            if (data instanceof FormData) {
+                options.body = data;
+            } else {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(data);
+            }
+        }
+
+        return fetch(url, options);
+    }
 
     /**
- * Fetch content from Laravel backend
- */
-async fetchContent(path, method = 'GET', data = null) {
-    const url = this.baseUrl + path;
-    const options = {
-        method,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': this.csrfToken,
-            'Accept': 'text/html, application/json', // Accept both
-            'X-SPA-Request': 'true'
-        },
-        credentials: 'same-origin'
-    };
+     * Render HTML content into the page
+     */
+    async render(html, path) {
+        // Check if response is JSON
+        try {
+            const data = JSON.parse(html);
 
-    if (data) {
-        if (data instanceof FormData) {
-            options.body = data;
-        } else {
-            options.headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(data);
+            if (data.html) {
+                // JSON contains HTML - render it
+                html = data.html;
+            } else if (data.table) {
+                // JSON contains table data (for AJAX search)
+                html = data.table;
+            } else if (data.redirect) {
+                // JSON contains redirect URL
+                await this.navigate(data.redirect);
+                return;
+            } else {
+                // Other JSON response - show error or handle differently
+                console.warn('Unexpected JSON response:', data);
+                this.showAlert('Received unexpected response format', 'danger');
+                return;
+            }
+        } catch (e) {
+            // Not JSON, proceed with HTML rendering
         }
+
+        let content = html;
+
+        // If response is a full HTML document, extract the content
+        if (html.includes('<!DOCTYPE html>')) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const pageContent = doc.getElementById('page-content');
+
+            if (pageContent) {
+                content = pageContent.innerHTML;
+            } else {
+                throw new Error('Could not find #page-content in response');
+            }
+        }
+
+        // Clean up old Alpine states
+        this.cleanupAlpineStates();
+
+        // Update both desktop and mobile content areas
+        const desktopTarget = document.querySelector(this.contentTarget);
+        const mobileTarget = document.querySelector(this.mobileContentTarget);
+
+        if (desktopTarget) {
+            desktopTarget.innerHTML = content;
+            console.log('📝 Desktop content updated for:', path);
+
+            // CRITICAL: Initialize Alpine.js on new content
+            this.initializeAlpineContent(desktopTarget, path);
+        }
+
+        if (mobileTarget) {
+            mobileTarget.innerHTML = content;
+            console.log('📝 Mobile content updated for:', path);
+
+            // Initialize Alpine on mobile content too
+            this.initializeAlpineContent(mobileTarget, path);
+        }
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Dispatch render event
+        window.dispatchEvent(new CustomEvent('spa:rendered', {
+            detail: { path, content }
+        }));
     }
 
-    return fetch(url, options);
-}
-
-/**
- * Render HTML content into the page
- */
-async render(html, path) {
-    // Check if response is JSON
-    try {
-        const data = JSON.parse(html);
-
-        if (data.html) {
-            // JSON contains HTML - render it
-            html = data.html;
-        } else if (data.table) {
-            // JSON contains table data (for AJAX search)
-            html = data.table;
-        } else if (data.redirect) {
-            // JSON contains redirect URL
-            await this.navigate(data.redirect);
+    /**
+     * Initialize Alpine.js on new content
+     */
+    initializeAlpineContent(element, path) {
+        if (!window.Alpine) {
+            console.warn('Alpine.js not loaded');
             return;
-        } else {
-            // Other JSON response - show error or handle differently
-            console.warn('Unexpected JSON response:', data);
-            this.showAlert('Received unexpected response format', 'danger');
-            return;
         }
-    } catch (e) {
-        // Not JSON, proceed with HTML rendering
+
+        // Use setTimeout to ensure DOM is fully updated
+        setTimeout(() => {
+            try {
+                console.log('🎯 Initializing Alpine.js on:', path);
+
+                // Method 1: Use Alpine.discover if available (Alpine v3)
+                if (typeof Alpine.discover === 'function') {
+                    console.log('🔍 Using Alpine.discover()');
+                    Alpine.discover();
+                }
+                // Method 2: Use Alpine.initTree (Alpine v3)
+                else if (typeof Alpine.initTree === 'function') {
+                    console.log('🌲 Using Alpine.initTree()');
+                    Alpine.initTree(element);
+                }
+                // Method 3: Manually walk through Alpine components (fallback)
+                else {
+                    console.log('🔧 Manually initializing Alpine components');
+                    this.initializeAlpineManually(element);
+                }
+
+                // Force Alpine to scan for new components
+                this.forceAlpineDiscovery();
+
+            } catch (error) {
+                console.error('❌ Alpine initialization error:', error);
+            }
+        }, 20);
     }
 
-    let content = html;
+    /**
+     * Force Alpine to discover new components
+     */
+    forceAlpineDiscovery() {
+        if (!window.Alpine) return;
 
-    // If response is a full HTML document, extract the content
-    if (html.includes('<!DOCTYPE html>')) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const pageContent = doc.getElementById('page-content');
+        // Try multiple methods to ensure Alpine picks up new components
+        setTimeout(() => {
+            // Method 1: Dispatch alpine:init event
+            document.dispatchEvent(new CustomEvent('alpine:init'));
 
-        if (pageContent) {
-            content = pageContent.innerHTML;
-        } else {
-            throw new Error('Could not find #page-content in response');
-        }
+            // Method 2: Trigger mutation observer if available
+            if (Alpine.mutationObserver) {
+                Alpine.mutationObserver.takeRecords();
+            }
+
+            // Method 3: Manually trigger discovery on all x-data elements
+            document.querySelectorAll('[x-data]').forEach(el => {
+                if (!el.__x) {
+                    try {
+                        if (Alpine.initTree) Alpine.initTree(el);
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }
+            });
+        }, 50);
     }
 
-    // Update both desktop and mobile content areas
-    const desktopTarget = document.querySelector(this.contentTarget);
-    const mobileTarget = document.querySelector(this.mobileContentTarget);
+    /**
+     * Manually initialize Alpine components
+     */
+    initializeAlpineManually(element) {
+        // Find all elements with x-data attribute
+        const alpineElements = element.querySelectorAll('[x-data]');
 
-    if (desktopTarget) {
-        desktopTarget.innerHTML = content;
+        alpineElements.forEach(el => {
+            try {
+                // Check if element already has Alpine scope
+                if (!el.__x) {
+                    // Parse the x-data expression
+                    const dataExpression = el.getAttribute('x-data');
+                    if (dataExpression) {
+                        // Create a new Alpine component
+                        const component = Alpine.createRawComponent(() => {
+                            return Function(`return (${dataExpression})`)();
+                        });
 
-        // Reinitialize Alpine.js if available
-        if (window.Alpine) {
-            setTimeout(() => Alpine.initTree(desktopTarget), 10);
-        }
+                        // Initialize Alpine on the element
+                        Alpine.addScopeToNode(el, component);
+                        Alpine.initTree(el);
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not initialize Alpine on element:', e);
+            }
+        });
+
+        // Also look for elements with x-init
+        const initElements = element.querySelectorAll('[x-init]');
+        initElements.forEach(el => {
+            try {
+                if (!el.__x) {
+                    Alpine.initTree(el);
+                }
+            } catch (e) {
+                console.warn('Could not run x-init on element:', e);
+            }
+        });
     }
 
-    if (mobileTarget) {
-        mobileTarget.innerHTML = content;
+    /**
+     * Clean up Alpine states from old content
+     */
+    cleanupAlpineStates() {
+        if (!window.Alpine) return;
 
-        if (window.Alpine) {
-            setTimeout(() => Alpine.initTree(mobileTarget), 10);
-        }
+        // Find and destroy any Alpine components in the content areas
+        const contentAreas = [
+            document.querySelector(this.contentTarget),
+            document.querySelector(this.mobileContentTarget)
+        ];
+
+        contentAreas.forEach(area => {
+            if (!area) return;
+
+            // Find Alpine components and destroy them
+            const alpineElements = area.querySelectorAll('[x-data]');
+            alpineElements.forEach(el => {
+                if (el.__x) {
+                    try {
+                        // Call destroy method if available
+                        if (el.__x.destroy) {
+                            el.__x.destroy();
+                        }
+                        if (el.__x.tearDown) {
+                            el.__x.tearDown();
+                        }
+                        // Remove Alpine reference
+                        delete el.__x;
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+            });
+        });
     }
-
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Dispatch render event
-    window.dispatchEvent(new CustomEvent('spa:rendered', {
-        detail: { path, content }
-    }));
-}
 
     /**
      * Submit form via AJAX
@@ -300,6 +475,8 @@ async render(html, path) {
                     await this.navigate(json.redirect);
                 } else if (json.message) {
                     this.showAlert(json.message, json.type || 'success');
+                    // Reinitialize Alpine after form submission
+                    setTimeout(() => this.forceAlpineDiscovery(), 100);
                 }
                 return;
             } catch (e) {
@@ -325,13 +502,20 @@ async render(html, path) {
     }
 
     /**
+     * Clear form validation errors
+     */
+    clearFormErrors() {
+        document.querySelectorAll('.text-red-500, .text-red-600').forEach(el => el.remove());
+        document.querySelectorAll('.border-red-500').forEach(el => {
+            el.classList.remove('border-red-500');
+        });
+    }
+
+    /**
      * Display validation errors on form
      */
     displayValidationErrors(form, errors) {
-        form.querySelectorAll('.text-red-500, .text-red-600').forEach(el => el.remove());
-        form.querySelectorAll('.border-red-500').forEach(el => {
-            el.classList.remove('border-red-500');
-        });
+        this.clearFormErrors();
 
         Object.keys(errors.errors || errors).forEach(field => {
             const input = form.querySelector(`[name="${field}"]`);
@@ -366,22 +550,34 @@ async render(html, path) {
      * Show loading indicator
      */
     showLoading() {
-        const indicator = document.querySelector(this.loadingIndicator);
-        if (indicator) {
-            indicator.style.opacity = '1';
-            indicator.style.pointerEvents = 'auto';
-        }
+        const indicators = [
+            document.querySelector(this.loadingIndicator),
+            document.querySelector('#loading-indicator-mobile')
+        ];
+
+        indicators.forEach(indicator => {
+            if (indicator) {
+                indicator.style.opacity = '1';
+                indicator.style.pointerEvents = 'auto';
+            }
+        });
     }
 
     /**
      * Hide loading indicator
      */
     hideLoading() {
-        const indicator = document.querySelector(this.loadingIndicator);
-        if (indicator) {
-            indicator.style.opacity = '0';
-            indicator.style.pointerEvents = 'none';
-        }
+        const indicators = [
+            document.querySelector(this.loadingIndicator),
+            document.querySelector('#loading-indicator-mobile')
+        ];
+
+        indicators.forEach(indicator => {
+            if (indicator) {
+                indicator.style.opacity = '0';
+                indicator.style.pointerEvents = 'none';
+            }
+        });
     }
 
     /**
@@ -402,29 +598,39 @@ async render(html, path) {
 
         const alertDiv = document.createElement('div');
         alertDiv.className = `mb-4 border-l-4 ${colors[type]} p-4 rounded-lg flash-message`;
+        alertDiv.setAttribute('x-data', '{ show: true }');
+        alertDiv.setAttribute('x-show', 'show');
+        alertDiv.setAttribute('x-init', 'setTimeout(() => show = false, 5000)');
+        alertDiv.setAttribute('x-transition', '');
         alertDiv.innerHTML = `
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <i class="fas ${icons[type]} flex-shrink-0"></i>
                     <p class="ml-3">${this.escapeHtml(message)}</p>
                 </div>
-                <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70">
+                <button @click="show = false" class="hover:opacity-70">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `;
 
-        const container = document.getElementById('flash-messages') ||
-                        document.getElementById('flash-messages-mobile');
+        const containers = [
+            document.getElementById('flash-messages'),
+            document.getElementById('flash-messages-mobile')
+        ];
 
-        if (container) {
-            container.appendChild(alertDiv);
-            setTimeout(() => {
-                alertDiv.style.transition = 'opacity 0.5s';
-                alertDiv.style.opacity = '0';
-                setTimeout(() => alertDiv.remove(), 500);
-            }, 5000);
-        }
+        containers.forEach(container => {
+            if (container) {
+                container.appendChild(alertDiv);
+
+                // Initialize Alpine on the new alert
+                if (window.Alpine) {
+                    setTimeout(() => {
+                        if (Alpine.initTree) Alpine.initTree(alertDiv);
+                    }, 10);
+                }
+            }
+        });
     }
 
     /**
@@ -433,6 +639,13 @@ async render(html, path) {
     handleError(error, path) {
         console.error('Router error:', error);
         this.showAlert(`Failed to load page: ${error.message}`, 'danger');
+
+        // Fallback to full page reload on critical errors
+        if (error.message.includes('failed') || error.message.includes('network')) {
+            setTimeout(() => {
+                window.location.href = path;
+            }, 2000);
+        }
     }
 
     /**
@@ -499,12 +712,18 @@ document.addEventListener('DOMContentLoaded', () => {
         cacheExpiry: 300000
     });
 
+    // Add default middleware
     window.router.use(async (path, options) => {
+        console.log('🛣️ Navigating to:', path);
         return true;
     });
 
+    // Preload common routes
     setTimeout(() => {
-        window.router.preload('/dashboard');
+        const commonRoutes = ['/dashboard', '/profile', '/settings'];
+        commonRoutes.forEach(route => {
+            window.router.preload(route);
+        });
     }, 1000);
 
     console.log('✅ SPA Router ready. Access via window.router');
