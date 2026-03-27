@@ -32,22 +32,14 @@
     @endif
 
     {{-- ── Step 1: Selector ─────────────────────────────────────── --}}
+    {{-- JSON stored in a data element so it never conflicts with x-data attribute quotes --}}
+    <script type="application/json" id="subjectsMapData">@json($subjectsByClass ?? [])</script>
+
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6"
-         x-data="{
-             map: @json($subjectsByClass ?? []),
-             classId: '{{ isset($selection) ? ($selection['class_id'] ?? '') : '' }}',
-             subjectId: '{{ isset($selection) ? ($selection['subject_id'] ?? '') : '' }}',
-             subjects: [],
-             hint: '\u2014 Select Class First \u2014',
-             init() { if (this.classId) this.onClassChange(); },
-             onClassChange() {
-                 if (!this.classId) { this.subjects = []; this.hint = '\u2014 Select Class First \u2014'; return; }
-                 var s = this.map[this.classId] || [];
-                 this.subjects = s;
-                 this.hint = s.length ? '\u2014 Select Subject \u2014' : 'No subjects assigned to this class';
-                 if (!s.find(function(x){ return String(x.id) === String(this.subjectId); }, this)) this.subjectId = '';
-             }
-         }">
+         data-init-class="{{ isset($selection['class_id']) ? $selection['class_id'] : '' }}"
+         data-init-subject="{{ isset($selection['subject_id']) ? $selection['subject_id'] : '' }}"
+         x-data="marksEntrySelector()"
+         x-init="init()">
         <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <span class="w-7 h-7 rounded-full bg-maroon text-white text-xs flex items-center justify-center mr-2 font-bold">1</span>
             Select Class, Subject, Term &amp; Year
@@ -271,5 +263,6 @@
     @endisset
 
 </div>
+
 @endsection
 
