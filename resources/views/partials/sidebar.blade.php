@@ -1,12 +1,12 @@
-<aside class="sidebar bg-maroon dark:bg-gray-800 border-r border-white/10 min-h-screen flex flex-col"
+﻿<aside class="sidebar border-r border-blue-200 min-h-screen flex flex-col"
        x-data="sidebarData">
 
     <!-- Logo and Brand -->
-    <div class="p-4 border-b border-white/10 dark:border-gray-700 sidebar-header">
+    <div class="p-4 border-b border-blue-200 sidebar-header">
         <div class="flex items-center gap-3">
 
             <!-- Logo Container -->
-            <div class="w-11 h-11 rounded-full overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm ring-1 ring-white/10">
+            <div class="w-11 h-11 rounded-full overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm ring-1 ring-blue-200">
                 <img
                     src="{{ asset('storage/' . school_setting('school_logo')) }}"
                     alt="{{ school_setting('school_name') }}"
@@ -16,10 +16,10 @@
 
             <!-- Text -->
             <div class="sidebar-text flex flex-col" x-show="!sidebarCollapsed" x-transition>
-                <h2 class="font-semibold text-base text-white leading-tight tracking-wide">
+                <h2 class="font-semibold text-base text-gray-900 leading-tight tracking-wide">
                     {{ config('app.name', 'ASMS') }}
                 </h2>
-                <p class="text-[11px] text-white/70 tracking-wide">
+                <p class="text-[11px] text-gray-600 tracking-wide">
                     Academic School System
                 </p>
             </div>
@@ -33,8 +33,8 @@
         <a href="/dashboard"
            @click="handleLinkClick()"
            :class="{
-               'bg-white !text-maroon font-semibold': isExactActive('/dashboard'),
-               'text-white/90 hover:bg-white/20': !isExactActive('/dashboard')
+               'bg-blue-700 !text-white font-semibold': isExactActive('/dashboard'),
+               'text-gray-900 hover:bg-blue-200': !isExactActive('/dashboard')
            }"
            class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all duration-200">
             <i class="fas fa-home w-5 text-center"></i>
@@ -46,8 +46,8 @@
         <div class="relative">
             <button @click="toggleDropdown('students', $event)"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/students'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/students')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/students'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/students')
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -66,14 +66,14 @@
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
                  style="display: none;"
-                 class="ml-8 mt-1 space-y-1 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                 class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
 
                 @canany('students.view')
                 <a href="/admin/students"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/students'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/students')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/students'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/students')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-list w-4 text-center"></i>
@@ -85,8 +85,8 @@
                 <a href="/admin/students/create"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/students/create'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/students/create')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/students/create'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/students/create')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-user-plus w-4 text-center"></i>
@@ -102,8 +102,8 @@
         <div class="relative">
             <button @click="toggleDropdown('teachers', $event)"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/teachers'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/teachers')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/teachers'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/teachers')
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -115,14 +115,14 @@
             </button>
 
             <div x-show="dropdowns.teachers" x-transition style="display: none;"
-                 class="ml-8 mt-1 space-y-1 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                 class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
 
                 @canany('teachers.view')
                 <a href="/admin/teachers"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/teachers'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/teachers')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/teachers'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/teachers')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-list w-4 text-center"></i>
@@ -134,8 +134,8 @@
                 <a href="/admin/teachers/create"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/teachers/create'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/teachers/create')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/teachers/create'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/teachers/create')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-user-plus w-4 text-center"></i>
@@ -151,8 +151,8 @@
         <div class="relative">
             <button @click="toggleDropdown('classes', $event)"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/classes') || isActive('/admin/class-levels') || isActive('/admin/streams'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/classes') && !isActive('/admin/class-levels') && !isActive('/admin/streams')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/classes') || isActive('/admin/class-levels') || isActive('/admin/streams'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/classes') && !isActive('/admin/class-levels') && !isActive('/admin/streams')
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -172,12 +172,12 @@
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
                 style="display: none;"
-                class="ml-8 mt-1 space-y-1 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
                 <a href="/admin/classes"
                 @click="handleLinkClick()"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isExactActive('/admin/classes'),
-                    'text-white/90 hover:bg-white/20': !isExactActive('/admin/classes')
+                    'bg-blue-700 !text-white font-semibold': isExactActive('/admin/classes'),
+                    'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/classes')
                 }"
                 class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-list w-4 text-center"></i>
@@ -186,8 +186,8 @@
                 <a href="/admin/class-categories"
                 @click="handleLinkClick()"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/class-categories'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/class-categories')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/class-categories'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/class-categories')
                 }"
                 class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-tags w-4 text-center"></i>
@@ -196,8 +196,8 @@
                 <a href="/admin/class-levels"
                 @click="handleLinkClick()"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/class-levels'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/class-levels')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/class-levels'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/class-levels')
                 }"
                 class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-layer-group w-4 text-center"></i>
@@ -206,8 +206,8 @@
                 <a href="/admin/streams"
                 @click="handleLinkClick()"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/streams'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/streams')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/streams'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/streams')
                 }"
                 class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-stream w-4 text-center"></i>
@@ -222,8 +222,8 @@
         <a href="/admin/subjects"
            @click="handleLinkClick()"
            :class="{
-               'bg-white !text-maroon font-semibold': isActive('/admin/subjects'),
-               'text-white/90 hover:bg-white/20': !isActive('/admin/subjects')
+               'bg-blue-700 !text-white font-semibold': isActive('/admin/subjects'),
+               'text-gray-900 hover:bg-blue-200': !isActive('/admin/subjects')
            }"
            class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all duration-200">
             <i class="fas fa-book w-5 text-center"></i>
@@ -235,8 +235,8 @@
         <a href="/admin/announcements"
            @click="handleLinkClick()"
            :class="{
-               'bg-white !text-maroon font-semibold': isActive('/admin/announcements'),
-               'text-white/90 hover:bg-white/20': !isActive('/admin/announcements')
+               'bg-blue-700 !text-white font-semibold': isActive('/admin/announcements'),
+               'text-gray-900 hover:bg-blue-200': !isActive('/admin/announcements')
            }"
            class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all duration-200">
             <i class="fas fa-book w-5 text-center"></i>
@@ -249,8 +249,8 @@
         <div class="relative">
             <button @click="toggleDropdown('marks', $event)"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/marks'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/marks')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/marks'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/marks')
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -262,14 +262,14 @@
             </button>
 
             <div x-show="dropdowns.marks" x-transition style="display: none;"
-                 class="ml-8 mt-1 space-y-1 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                 class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
 
                 @canany('marks.entry')
                 <a href="/admin/marks-entry"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/marks-entry'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/marks-entry')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/marks-entry'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/marks-entry')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-pen w-4 text-center"></i>
@@ -281,8 +281,8 @@
                 <a href="/admin/marks"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/marks'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/marks')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/marks'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/marks')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-list w-4 text-center"></i>
@@ -298,8 +298,8 @@
         <div class="relative">
             <button @click="toggleDropdown('reports', $event)"
                 :class="{
-                    'bg-white !text-maroon font-semibold': isActive('/admin/report-card'),
-                    'text-white/90 hover:bg-white/20': !isActive('/admin/report-card')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/report-card'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/report-card')
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -311,14 +311,14 @@
             </button>
 
             <div x-show="dropdowns.reports" x-transition style="display: none;"
-                 class="ml-8 mt-1 space-y-1 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                 class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
 
                 @canany('reports.view')
                 <a href="/admin/report-card/form"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-white !text-maroon font-semibold': isExactActive('/admin/report-card/form'),
-                       'text-white/90 hover:bg-white/20': !isExactActive('/admin/report-card/form')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/report-card/form'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/report-card/form')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-graduation-cap w-4 text-center"></i>
@@ -334,8 +334,8 @@
         <a href="/admin/system"
         @click="handleLinkClick()"
         :class="{
-            'bg-white !text-maroon font-semibold': isActive('/admin/system'),
-            'text-white/90 hover:bg-white/20': !isActive('/admin/system')
+            'bg-blue-700 !text-white font-semibold': isActive('/admin/system'),
+            'text-gray-900 hover:bg-blue-200': !isActive('/admin/system')
         }"
         class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all duration-200">
             <i class="fas fa-cog w-5 text-center"></i>
@@ -349,8 +349,8 @@
         <!-- Dashboard Icon (Everyone) -->
         <a href="/dashboard"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isExactActive('/dashboard')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isExactActive('/dashboard')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-home text-xl"></i>
             <span class="sidebar-tooltip">Dashboard</span>
         </a>
@@ -359,8 +359,8 @@
         @canany('students.view')
         <a href="/admin/students"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/students')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/students')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-users text-xl"></i>
             <span class="sidebar-tooltip">Students</span>
         </a>
@@ -370,8 +370,8 @@
         @canany('teachers.view')
         <a href="/admin/teachers"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/teachers')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/teachers')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-chalkboard-teacher text-xl"></i>
             <span class="sidebar-tooltip">Teachers</span>
         </a>
@@ -381,8 +381,8 @@
         @canany('classes.view')
         <a href="/admin/classes"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/classes')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/classes')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-chalkboard text-xl"></i>
             <span class="sidebar-tooltip">Classes</span>
         </a>
@@ -392,8 +392,8 @@
         @canany('subjects.view')
         <a href="/admin/subjects"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/subjects')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/subjects')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-book text-xl"></i>
             <span class="sidebar-tooltip">Subjects</span>
         </a>
@@ -403,8 +403,8 @@
         @canany('marks.entry')
         <a href="/admin/marks-entry"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/marks-entry')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/marks-entry')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-edit text-xl"></i>
             <span class="sidebar-tooltip">Marks</span>
         </a>
@@ -414,8 +414,8 @@
         @canany('reports.view')
         <a href="/admin/report-card/form"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/report-card/form')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/report-card/form')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-file-alt text-xl"></i>
             <span class="sidebar-tooltip">Reports</span>
         </a>
@@ -425,8 +425,8 @@
         @canany(['system.users', 'system.roles'])
         <a href="/admin/system"
            @click="handleLinkClick()"
-           :class="{'bg-white/30': isActive('/admin/system')}"
-           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-white/90 hover:bg-white/20">
+           :class="{'bg-blue-700': isActive('/admin/system')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-cog text-xl"></i>
             <span class="sidebar-tooltip">Settings</span>
         </a>
@@ -434,10 +434,10 @@
     </nav>
 
     <!-- Logout Button (Everyone) -->
-    <div class="border-t border-white/10">
+    <div class="border-t border-blue-200">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="flex items-center w-full p-4 hover:bg-white/20 text-white/90 transition-all"
+            <button type="submit" class="flex items-center w-full p-4 hover:bg-blue-200 text-gray-900 transition-all"
                     :class="sidebarCollapsed ? 'justify-center' : 'space-x-3'">
                 <i class="fas fa-sign-out-alt" :class="sidebarCollapsed ? 'text-xl' : 'w-5 text-center'"></i>
                 <span class="font-medium" x-show="!sidebarCollapsed" x-transition>Logout</span>
@@ -453,7 +453,7 @@
         overflow-y: auto;
         overflow-x: hidden;
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: linear-gradient(180deg, #1565C0 0%, #0D47A1 100%) !important;
+        background: linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 100%) !important;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -472,9 +472,9 @@
         border-radius: 20px;
     }
 
-    /* Blue dark for dropdown backgrounds */
+    /* Blue for dropdown backgrounds */
     .bg-maroon-dark {
-        background-color: #0D47A1 !important;
+        background-color: #90CAF9 !important;
     }
 
     .dark .bg-maroon-dark {
@@ -510,10 +510,10 @@
     }
 
     /* Active state styling */
-    .nav-link.bg-white i,
-    .nav-link.bg-white span,
-    .nav-link-icon.bg-white\/30 i {
-        color: #1565C0 !important;
+    .nav-link.bg-blue-700 i,
+    .nav-link.bg-blue-700 span,
+    .nav-link-icon.bg-blue-700 i {
+        color: #ffffff !important;
     }
 
     /* Smooth transitions */
@@ -521,3 +521,4 @@
         transition: all 0.2s ease-in-out;
     }
 </style>
+
