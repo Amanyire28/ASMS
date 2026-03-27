@@ -60,19 +60,19 @@
         }
 
         /* Colors */
-        .text-maroon { color: #800000 !important; }
-        .bg-maroon { background-color: #800000 !important; }
-        .hover\:bg-maroon:hover { background-color: #800000 !important; }
-        .border-maroon { border-color: #800000 !important; }
+        .text-maroon { color: #1565C0 !important; }
+        .bg-maroon { background-color: #1565C0 !important; }
+        .hover\:bg-maroon:hover { background-color: #1565C0 !important; }
+        .border-maroon { border-color: #1565C0 !important; }
 
-        .dark .text-maroon { color: #b34d4d !important; }
-        .dark .bg-maroon { background-color: #5f0000 !important; }
-        .dark .border-maroon { border-color: #5f0000 !important; }
+        .dark .text-maroon { color: #42A5F5 !important; }
+        .dark .bg-maroon { background-color: #0D47A1 !important; }
+        .dark .border-maroon { border-color: #0D47A1 !important; }
 
         /* Spinner */
         .spinner {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #800000;
+            border-top: 3px solid #1565C0;
             border-radius: 50%;
             width: 40px;
             height: 40px;

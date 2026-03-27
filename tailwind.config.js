@@ -17,10 +17,10 @@ module.exports = {
             },
             colors: {
                 maroon: {
-                    DEFAULT: '#800000',
-                    dark: '#5f0000',
-                    light: '#b34d4d',
-                    lighter: '#d07a7a',
+                    DEFAULT: '#1565C0',
+                    dark: '#0D47A1',
+                    light: '#42A5F5',
+                    lighter: '#90CAF9',
                 },
             },
         },
