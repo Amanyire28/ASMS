@@ -10,7 +10,6 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\ClassModel;
 use App\Models\Subject;
-use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {

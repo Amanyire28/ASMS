@@ -20,7 +20,6 @@ use App\Models\Teacher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\AnnouncementController;
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
