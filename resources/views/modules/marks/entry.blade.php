@@ -151,7 +151,7 @@
             <input type="hidden" name="academic_year"  value="{{ $selection['academic_year'] }}">
 
             <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="min-w-full border-separate border-spacing-0 text-sm">
+                <table class="w-auto border-separate border-spacing-0 text-sm">
                     <thead>
                         <tr>
                             {{-- Sticky # --}}
@@ -160,26 +160,28 @@
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">#</th>
                             {{-- Sticky student name --}}
                             <th class="sticky left-10 z-20 bg-gray-50 dark:bg-gray-800
-                                       py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase min-w-[180px]
+                                       py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase w-44
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
-                            {{-- One column per subject --}}
+                            {{-- One column per subject — fixed width so the table overflows and scrolls --}}
                             @foreach($classSubjects as $subject)
-                            <th class="bg-gray-50 dark:bg-gray-800 py-3 px-3 text-center min-w-[140px]
+                            <th class="bg-gray-50 dark:bg-gray-800 py-2 px-2 text-center w-[116px]
                                        border-b-2 border-r last:border-r-0 border-gray-200 dark:border-gray-700">
-                                <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 leading-tight">
+                                {{-- Truncated name; full name shown on hover via title --}}
+                                <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate w-full
+                                            leading-tight" title="{{ $subject->name }}">
                                     {{ $subject->name }}
                                 </div>
                                 @if($subject->code)
-                                <div class="text-xs text-gray-400 font-normal">{{ $subject->code }}</div>
+                                <div class="text-xs text-gray-400 font-normal truncate">{{ $subject->code }}</div>
                                 @endif
                                 {{-- Editable "Out Of" for this column; x-model keeps store in sync --}}
-                                <div class="mt-1.5 flex items-center justify-center gap-1">
-                                    <span class="text-xs text-gray-400">/ </span>
+                                <div class="mt-1 flex items-center justify-center gap-0.5">
+                                    <span class="text-xs text-gray-400">/</span>
                                     <input type="number"
                                         name="total[{{ $subject->id }}]"
                                         x-model.number="$store.marksTotals.totals['{{ $subject->id }}']"
                                         min="1" max="400" step="0.5"
-                                        class="w-16 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5
+                                        class="w-14 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
                                                text-xs text-center focus:ring-1 focus:ring-maroon focus:border-maroon
                                                dark:bg-gray-700 dark:text-white font-normal">
                                 </div>
@@ -221,8 +223,8 @@
                                 <input type="number"
                                     name="marks[{{ $student->id }}][{{ $subject->id }}]"
                                     x-model="obt"
-                                    min="0" step="0.5" placeholder="â€”"
-                                    class="w-20 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5
+                                    min="0" step="0.5" placeholder="—"
+                                    class="w-[88px] border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5
                                            text-sm text-center focus:ring-2 focus:ring-maroon focus:border-maroon
                                            dark:bg-gray-700 dark:text-white">
                                 <div class="text-xs font-semibold mt-0.5 h-4 leading-none"
