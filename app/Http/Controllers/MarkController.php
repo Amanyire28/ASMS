@@ -19,34 +19,48 @@ class MarkController extends Controller
     {
         $teacher = $this->currentTeacher();
 
-        // Filter lists shown in the sidebar filters
-        if ($teacher) {
-            $classes  = $this->teacherClasses($teacher);
-            $subjects = $this->teacherSubjects($teacher);
-        } else {
-            $classes  = ClassModel::where('is_active', true)->orderBy('name')->get();
-            $subjects = Subject::where('is_active', true)->orderBy('name')->get();
-        }
+        $classes = $teacher
+            ? $this->teacherClasses($teacher)
+            : ClassModel::where('is_active', true)->orderBy('name')->get();
 
         $terms = ['Term 1', 'Term 2', 'Term 3'];
         $years = $this->academicYears();
 
-        $query = Mark::with(['student', 'subject', 'class']);
+        // ── Grid mode: all three filters present → full student × subject sheet ──
+        if ($request->filled('class_id') && $request->filled('term') && $request->filled('academic_year')) {
+            $class = ClassModel::findOrFail($request->class_id);
 
-        // Teachers only see marks for their own class+subject assignments
-        if ($teacher) {
-            $query->whereIn('class_id', $classes->pluck('id'))
-                  ->whereIn('subject_id', $subjects->pluck('id'));
+            $classSubjectsQuery = $class->subjects()
+                ->where('subjects.is_active', true)
+                ->orderBy('subjects.name');
+            if ($teacher) {
+                $classSubjectsQuery->where('class_subject.teacher_id', $teacher->id);
+            }
+            $classSubjects = $classSubjectsQuery->get();
+
+            $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
+
+            $flat = Mark::where([
+                'class_id'      => $request->class_id,
+                'term'          => $request->term,
+                'academic_year' => $request->academic_year,
+            ])->whereIn('subject_id', $classSubjects->pluck('id'))->get();
+
+            $marksGrid = [];
+            foreach ($flat as $m) {
+                $marksGrid[$m->student_id][$m->subject_id] = $m;
+            }
+
+            $selection = $request->only(['class_id', 'term', 'academic_year']);
+
+            return view('modules.marks.index', compact(
+                'classes', 'terms', 'years',
+                'class', 'classSubjects', 'students', 'marksGrid', 'selection'
+            ));
         }
 
-        if ($request->filled('class_id'))      $query->where('class_id',      $request->class_id);
-        if ($request->filled('subject_id'))    $query->where('subject_id',    $request->subject_id);
-        if ($request->filled('term'))          $query->where('term',          $request->term);
-        if ($request->filled('academic_year')) $query->where('academic_year', $request->academic_year);
-
-        $marks = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
-
-        return view('modules.marks.index', compact('marks', 'classes', 'subjects', 'terms', 'years'));
+        // ── Prompt mode: not all filters set yet ──
+        return view('modules.marks.index', compact('classes', 'terms', 'years'));
     }
 
     // ──────────────────────────────────────────────────────────
