@@ -46,6 +46,16 @@ Route::get('/dashboard', [HomeController::class, 'index'])
     ->middleware(['auth:sanctum', 'verified'])
     ->name('dashboard');
 
+// Profile & Settings (no special permission required, just auth)
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get('/settings', function () {
+        return redirect()->route('settings.school-profile');
+    })->name('settings');
+});
+
 // Password Change Routes (no permission required)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/password/change', function () {
@@ -390,6 +400,10 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         ->middleware('permission:marks.entry')
         ->name('marks.store.multiple');
 
+    Route::get('api/subjects-by-class', [MarkController::class, 'getSubjectsByClass'])
+        ->middleware('permission:marks.entry')
+        ->name('api.subjects-by-class');
+
     Route::get('marks/{mark}/edit', [MarkController::class, 'edit'])
         ->middleware('permission:marks.edit')
         ->name('marks.edit');
@@ -475,11 +489,6 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     // Subject Management Routes
     Route::resource('subjects', SubjectController::class);
 
-    // Marks Management Routes
-    Route::resource('marks', MarkController::class);
-    Route::get('marks-entry', [MarkController::class, 'create'])->name('marks.entry.form');
-    Route::post('marks-entry', [MarkController::class, 'entry'])->name('marks.entry');
-    Route::post('marks-store-multiple', [MarkController::class, 'storeMultiple'])->name('marks.store.multiple');
     Route::get('report-card/{student}', [MarkController::class, 'reportCard'])->name('report.card');
 
     // Announcement Management Routes

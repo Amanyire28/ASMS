@@ -11,6 +11,11 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @method \Illuminate\Database\Eloquent\Relations\MorphMany notifications()
+ * @method \Illuminate\Database\Eloquent\Relations\MorphMany unreadNotifications()
+ * @method \Illuminate\Database\Eloquent\Relations\MorphMany readNotifications()
+ */
 class User extends Authenticatable
 {
     use HasApiTokens;

@@ -720,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Preload common routes
     setTimeout(() => {
-        const commonRoutes = ['/dashboard', '/profile', '/settings'];
+        const commonRoutes = ['/dashboard'];
         commonRoutes.forEach(route => {
             window.router.preload(route);
         });
