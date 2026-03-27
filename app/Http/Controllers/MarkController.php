@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Mark;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Models\Teacher;
 use App\Models\ClassModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MarkController extends Controller
 {
@@ -15,12 +17,27 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     public function index(Request $request)
     {
-        $classes  = ClassModel::where('is_active', true)->orderBy('name')->get();
-        $subjects = Subject::where('is_active', true)->orderBy('name')->get();
-        $terms    = ['Term 1', 'Term 2', 'Term 3'];
-        $years    = $this->academicYears();
+        $teacher = $this->currentTeacher();
+
+        // Filter lists shown in the sidebar filters
+        if ($teacher) {
+            $classes  = $this->teacherClasses($teacher);
+            $subjects = $this->teacherSubjects($teacher);
+        } else {
+            $classes  = ClassModel::where('is_active', true)->orderBy('name')->get();
+            $subjects = Subject::where('is_active', true)->orderBy('name')->get();
+        }
+
+        $terms = ['Term 1', 'Term 2', 'Term 3'];
+        $years = $this->academicYears();
 
         $query = Mark::with(['student', 'subject', 'class']);
+
+        // Teachers only see marks for their own class+subject assignments
+        if ($teacher) {
+            $query->whereIn('class_id', $classes->pluck('id'))
+                  ->whereIn('subject_id', $subjects->pluck('id'));
+        }
 
         if ($request->filled('class_id'))      $query->where('class_id',      $request->class_id);
         if ($request->filled('subject_id'))    $query->where('subject_id',    $request->subject_id);
@@ -37,11 +54,15 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     public function create()
     {
-        $classes = ClassModel::where('is_active', true)->orderBy('name')->get();
-        $terms   = ['Term 1', 'Term 2', 'Term 3'];
-        $years   = $this->academicYears();
+        $teacher = $this->currentTeacher();
 
-        $subjectsByClass = $this->buildSubjectsByClass($classes);
+        $classes = $teacher
+            ? $this->teacherClasses($teacher)
+            : ClassModel::where('is_active', true)->orderBy('name')->get();
+
+        $terms           = ['Term 1', 'Term 2', 'Term 3'];
+        $years           = $this->academicYears();
+        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
 
         return view('modules.marks.entry', compact('classes', 'terms', 'years', 'subjectsByClass'));
     }
@@ -53,13 +74,17 @@ class MarkController extends Controller
     {
         $request->validate(['class_id' => 'required|exists:classes,id']);
 
-        $subjects = ClassModel::findOrFail($request->class_id)
+        $teacher = $this->currentTeacher();
+        $query   = ClassModel::findOrFail($request->class_id)
             ->subjects()
             ->where('subjects.is_active', true)
-            ->orderBy('subjects.name')
-            ->get(['subjects.id', 'subjects.name', 'subjects.code']);
+            ->orderBy('subjects.name');
 
-        return response()->json($subjects);
+        if ($teacher) {
+            $query->where('class_subject.teacher_id', $teacher->id);
+        }
+
+        return response()->json($query->get(['subjects.id', 'subjects.name', 'subjects.code']));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -74,10 +99,24 @@ class MarkController extends Controller
             'academic_year' => 'required|string',
         ]);
 
-        $class         = ClassModel::findOrFail($request->class_id);
-        $subject       = Subject::findOrFail($request->subject_id);
-        $classSubjects = $class->subjects()->where('subjects.is_active', true)->orderBy('subjects.name')->get();
-        $students      = $class->students()->where('is_active', true)->orderBy('first_name')->get();
+        $teacher = $this->currentTeacher();
+
+        // Teachers can only enter marks for their own assignments
+        if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $request->subject_id)) {
+            abort(403, 'You are not assigned to teach this subject in this class.');
+        }
+
+        $class   = ClassModel::findOrFail($request->class_id);
+        $subject = Subject::findOrFail($request->subject_id);
+
+        // Subject dropdown for Step-1 card shown alongside the grid
+        $classSubjectsQuery = $class->subjects()->where('subjects.is_active', true)->orderBy('subjects.name');
+        if ($teacher) {
+            $classSubjectsQuery->where('class_subject.teacher_id', $teacher->id);
+        }
+        $classSubjects = $classSubjectsQuery->get();
+
+        $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
 
         $existingMarks = Mark::where([
             'class_id'      => $request->class_id,
@@ -87,11 +126,14 @@ class MarkController extends Controller
         ])->get()->keyBy('student_id');
 
         $selection = $request->only(['class_id', 'subject_id', 'term', 'academic_year']);
-        $classes   = ClassModel::where('is_active', true)->orderBy('name')->get();
-        $terms     = ['Term 1', 'Term 2', 'Term 3'];
-        $years     = $this->academicYears();
 
-        $subjectsByClass = $this->buildSubjectsByClass($classes);
+        $classes = $teacher
+            ? $this->teacherClasses($teacher)
+            : ClassModel::where('is_active', true)->orderBy('name')->get();
+
+        $terms           = ['Term 1', 'Term 2', 'Term 3'];
+        $years           = $this->academicYears();
+        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
 
         return view('modules.marks.entry', compact(
             'class', 'subject', 'classSubjects', 'students',
@@ -116,10 +158,16 @@ class MarkController extends Controller
             'marks.*.remarks'        => 'nullable|string|max:255',
         ]);
 
+        $teacher = $this->currentTeacher();
+
+        if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $request->subject_id)) {
+            abort(403, 'You are not assigned to teach this subject in this class.');
+        }
+
         foreach ($request->marks as $row) {
             $obtained = (float) $row['marks_obtained'];
             $total    = (float) $row['total_marks'];
-            $obtained = min($obtained, $total); // can't exceed total
+            $obtained = min($obtained, $total);
 
             Mark::updateOrCreate(
                 [
@@ -146,6 +194,12 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     public function edit(Mark $mark)
     {
+        $teacher = $this->currentTeacher();
+
+        if ($teacher && !$this->teacherOwnsAssignment($teacher, $mark->class_id, $mark->subject_id)) {
+            abort(403, 'You are not assigned to teach this subject in this class.');
+        }
+
         $mark->load(['student', 'subject', 'class']);
         return view('modules.marks.edit', compact('mark'));
     }
@@ -155,6 +209,12 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     public function update(Request $request, Mark $mark)
     {
+        $teacher = $this->currentTeacher();
+
+        if ($teacher && !$this->teacherOwnsAssignment($teacher, $mark->class_id, $mark->subject_id)) {
+            abort(403, 'You are not assigned to teach this subject in this class.');
+        }
+
         $request->validate([
             'marks_obtained' => 'required|numeric|min:0',
             'total_marks'    => 'required|numeric|min:1|max:400',
@@ -178,6 +238,12 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     public function destroy(Mark $mark)
     {
+        $teacher = $this->currentTeacher();
+
+        if ($teacher && !$this->teacherOwnsAssignment($teacher, $mark->class_id, $mark->subject_id)) {
+            abort(403, 'You are not assigned to teach this subject in this class.');
+        }
+
         $mark->delete();
         return redirect()->route('marks.index')->with('success', 'Mark deleted.');
     }
@@ -204,6 +270,49 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     //  HELPERS
     // ──────────────────────────────────────────────────────────
+
+    /** Returns the Teacher record for the logged-in user, or null for admins. */
+    private function currentTeacher(): ?Teacher
+    {
+        $user = auth()->user();
+        if (!$user || !$user->hasRole('Teacher')) {
+            return null;
+        }
+        return Teacher::where('email', $user->email)->first();
+    }
+
+    /** Classes where this teacher is assigned as subject teacher (class_subject pivot). */
+    private function teacherClasses(Teacher $teacher)
+    {
+        return ClassModel::where('is_active', true)
+            ->whereHas('subjects', function ($q) use ($teacher) {
+                $q->where('class_subject.teacher_id', $teacher->id);
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** Distinct subjects this teacher teaches across any class. */
+    private function teacherSubjects(Teacher $teacher)
+    {
+        return Subject::where('is_active', true)
+            ->whereHas('classes', function ($q) use ($teacher) {
+                $q->where('class_subject.teacher_id', $teacher->id);
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** Check if a teacher is the subject-teacher for a specific class+subject pair. */
+    private function teacherOwnsAssignment(Teacher $teacher, $classId, $subjectId): bool
+    {
+        return \DB::table('class_subject')
+            ->where('class_model_id', $classId)
+            ->where('subject_id', $subjectId)
+            ->where('teacher_id', $teacher->id)
+            ->exists();
+    }
+
     private function grade(float $obtained, float $total): string
     {
         if ($total <= 0) return 'N/A';
@@ -224,10 +333,17 @@ class MarkController extends Controller
         return ["{$y}-" . ($y + 1), ($y - 1) . "-{$y}", ($y + 1) . "-" . ($y + 2)];
     }
 
-    private function buildSubjectsByClass($classes): array
+    /**
+     * Build a map of class_id → [{id, name, code}] for the Alpine subject dropdown.
+     * When $teacher is provided, only includes subjects assigned to that teacher.
+     */
+    private function buildSubjectsByClass($classes, ?Teacher $teacher = null): array
     {
-        $classes->load(['subjects' => function ($q) {
+        $classes->load(['subjects' => function ($q) use ($teacher) {
             $q->where('subjects.is_active', true)->orderBy('subjects.name');
+            if ($teacher) {
+                $q->where('class_subject.teacher_id', $teacher->id);
+            }
         }]);
 
         $map = [];
