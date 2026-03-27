@@ -32,7 +32,22 @@
     @endif
 
     {{-- ── Step 1: Selector ─────────────────────────────────────── --}}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6"
+         x-data="{
+             map: @json($subjectsByClass ?? []),
+             classId: '{{ isset($selection) ? ($selection['class_id'] ?? '') : '' }}',
+             subjectId: '{{ isset($selection) ? ($selection['subject_id'] ?? '') : '' }}',
+             subjects: [],
+             hint: '\u2014 Select Class First \u2014',
+             init() { if (this.classId) this.onClassChange(); },
+             onClassChange() {
+                 if (!this.classId) { this.subjects = []; this.hint = '\u2014 Select Class First \u2014'; return; }
+                 var s = this.map[this.classId] || [];
+                 this.subjects = s;
+                 this.hint = s.length ? '\u2014 Select Subject \u2014' : 'No subjects assigned to this class';
+                 if (!s.find(function(x){ return String(x.id) === String(this.subjectId); }, this)) this.subjectId = '';
+             }
+         }">
         <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <span class="w-7 h-7 rounded-full bg-maroon text-white text-xs flex items-center justify-center mr-2 font-bold">1</span>
             Select Class, Subject, Term &amp; Year
@@ -48,35 +63,31 @@
                         Class <span class="text-red-500">*</span>
                     </label>
                     <select name="class_id" id="classSelect" required
+                        x-model="classId" @change="onClassChange()"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
                                focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
-                        <option value="">— Select Class —</option>
+                        <option value="">&mdash; Select Class &mdash;</option>
                         @foreach($classes as $cls)
-                        <option value="{{ $cls->id }}"
-                            {{ (isset($selection['class_id']) && $selection['class_id'] == $cls->id) ? 'selected' : '' }}>
-                            {{ $cls->name }}
-                        </option>
+                        <option value="{{ $cls->id }}">{{ $cls->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                {{-- Subject (populated via AJAX) --}}
+                {{-- Subject (Alpine-powered) --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Subject <span class="text-red-500">*</span>
                     </label>
                     <select name="subject_id" id="subjectSelect" required
+                        x-model="subjectId"
+                        :disabled="!classId || subjects.length === 0"
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
-                               focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
-                        <option value="">— Select Class First —</option>
-                        @if(isset($classSubjects))
-                        @foreach($classSubjects as $sub)
-                        <option value="{{ $sub->id }}"
-                            {{ (isset($selection['subject_id']) && $selection['subject_id'] == $sub->id) ? 'selected' : '' }}>
-                            {{ $sub->name }}{{ $sub->code ? ' ('.$sub->code.')' : '' }}
-                        </option>
-                        @endforeach
-                        @endif
+                               focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white
+                               disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="" x-text="hint"></option>
+                        <template x-for="s in subjects" :key="s.id">
+                            <option :value="s.id" x-text="s.name + (s.code ? ' (' + s.code + ')' : '')"></option>
+                        </template>
                     </select>
                 </div>
 
@@ -88,7 +99,7 @@
                     <select name="term" required
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
                                focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
-                        <option value="">— Select Term —</option>
+                        <option value="">&mdash; Select Term &mdash;</option>
                         @foreach($terms as $t)
                         <option value="{{ $t }}"
                             {{ (isset($selection['term']) && $selection['term'] == $t) ? 'selected' : '' }}>
@@ -106,7 +117,7 @@
                     <select name="academic_year" required
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
                                focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
-                        <option value="">— Select Year —</option>
+                        <option value="">&mdash; Select Year &mdash;</option>
                         @foreach($years as $y)
                         <option value="{{ $y }}"
                             {{ (isset($selection['academic_year']) && $selection['academic_year'] == $y) ? 'selected' : '' }}>
@@ -170,7 +181,25 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @foreach($students as $i => $student)
                         @php $existing = $existingMarks[$student->id] ?? null; @endphp
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors" data-row="{{ $i }}">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                            data-row="{{ $i }}"
+                            x-data="{
+                                obt: '{{ $existing?->marks_obtained ?? '' }}',
+                                tot: '{{ $existing?->total_marks ?? 100 }}',
+                                get gradeText() {
+                                    var o = parseFloat(this.obt), t = parseFloat(this.tot) || 100;
+                                    if (isNaN(o) || String(this.obt).trim() === '') return '\u2014';
+                                    var p = Math.min((o/t)*100, 100);
+                                    var g = p>=90?'A+':p>=80?'A':p>=70?'B+':p>=60?'B':p>=50?'C+':p>=40?'C':p>=30?'D':'F';
+                                    return p.toFixed(1)+'% \u2014 '+g;
+                                },
+                                get gradeClass() {
+                                    var o = parseFloat(this.obt), t = parseFloat(this.tot) || 100;
+                                    if (isNaN(o) || String(this.obt).trim() === '') return 'text-gray-400';
+                                    var p = Math.min((o/t)*100, 100);
+                                    return p>=70?'text-green-600':p>=50?'text-blue-600':p>=40?'text-yellow-600':p>=30?'text-orange-500':'text-red-600';
+                                }
+                            }">
                             <td class="py-3 px-3 text-sm text-gray-400">{{ $i + 1 }}</td>
                             <td class="py-3 px-3">
                                 <input type="hidden" name="marks[{{ $i }}][student_id]" value="{{ $student->id }}">
@@ -190,7 +219,7 @@
                             <td class="py-3 px-3">
                                 <input type="number"
                                     name="marks[{{ $i }}][marks_obtained]"
-                                    value="{{ $existing?->marks_obtained ?? '' }}"
+                                    x-model="obt"
                                     min="0" step="0.5" placeholder="0" required
                                     class="marks-obtained w-28 border border-gray-300 dark:border-gray-600 rounded-lg
                                            px-2 py-1.5 text-sm focus:ring-2 focus:ring-maroon focus:border-maroon
@@ -199,20 +228,16 @@
                             <td class="py-3 px-3">
                                 <input type="number"
                                     name="marks[{{ $i }}][total_marks]"
-                                    value="{{ $existing?->total_marks ?? 100 }}"
+                                    x-model="tot"
                                     min="1" max="400" step="0.5" required
                                     class="total-marks w-20 border border-gray-300 dark:border-gray-600 rounded-lg
                                            px-2 py-1.5 text-sm focus:ring-2 focus:ring-maroon focus:border-maroon
                                            dark:bg-gray-700 dark:text-white">
                             </td>
                             <td class="py-3 px-3">
-                                <span class="grade-badge text-sm font-semibold text-gray-400">
-                                    @if($existing)
-                                        {{ $existing->percentage }}% &mdash; {{ $existing->grade }}
-                                    @else
-                                        &mdash;
-                                    @endif
-                                </span>
+                                <span class="grade-badge text-sm font-semibold"
+                                      :class="gradeClass"
+                                      x-text="gradeText">—</span>
                             </td>
                             <td class="py-3 px-3">
                                 <input type="text"
@@ -248,79 +273,3 @@
 </div>
 @endsection
 
-<script>
-(function () {
-    // Subjects preloaded per class — no AJAX needed
-    var subjectsByClass = @json($subjectsByClass ?? []);
-
-    function gradeFromPct(pct) {
-        if (pct >= 90) return ['A+', 'text-green-600'];
-        if (pct >= 80) return ['A',  'text-green-600'];
-        if (pct >= 70) return ['B+', 'text-blue-600'];
-        if (pct >= 60) return ['B',  'text-blue-600'];
-        if (pct >= 50) return ['C+', 'text-yellow-600'];
-        if (pct >= 40) return ['C',  'text-yellow-600'];
-        if (pct >= 30) return ['D',  'text-orange-500'];
-        return ['F', 'text-red-600'];
-    }
-
-    function updateRowGrade(row) {
-        var obt   = parseFloat(row.querySelector('.marks-obtained').value);
-        var tot   = parseFloat(row.querySelector('.total-marks').value) || 100;
-        var badge = row.querySelector('.grade-badge');
-        if (!isNaN(obt) && row.querySelector('.marks-obtained').value !== '') {
-            var pct         = Math.min((obt / tot) * 100, 100).toFixed(1);
-            var res         = gradeFromPct(parseFloat(pct));
-            badge.textContent = pct + '% \u2014 ' + res[0];
-            badge.className   = 'grade-badge text-sm font-semibold ' + res[1];
-        } else {
-            badge.textContent = '\u2014';
-            badge.className   = 'grade-badge text-sm font-semibold text-gray-400';
-        }
-    }
-
-    document.querySelectorAll('tr[data-row]').forEach(function (row) {
-        var obt = row.querySelector('.marks-obtained');
-        var tot = row.querySelector('.total-marks');
-        if (obt) obt.addEventListener('input', function () { updateRowGrade(row); });
-        if (tot) tot.addEventListener('input', function () { updateRowGrade(row); });
-    });
-
-    // ── Subject dropdown — populated from preloaded data (no AJAX) ──
-    var classSelect   = document.getElementById('classSelect');
-    var subjectSelect = document.getElementById('subjectSelect');
-
-    function populateSubjects(classId) {
-        if (!subjectSelect) return;
-        if (!classId) {
-            subjectSelect.innerHTML = '<option value="">\u2014 Select Class First \u2014</option>';
-            return;
-        }
-        var subjects = subjectsByClass[classId] || [];
-        if (!subjects.length) {
-            subjectSelect.innerHTML = '<option value="">No subjects assigned to this class</option>';
-            return;
-        }
-        subjectSelect.innerHTML = '<option value="">\u2014 Select Subject \u2014</option>' +
-            subjects.map(function (s) {
-                var label = s.name + (s.code ? ' (' + s.code + ')' : '');
-                return '<option value="' + s.id + '">' + label + '</option>';
-            }).join('');
-    }
-
-    if (classSelect && subjectSelect) {
-        // Re-populate subjects when class changes
-        classSelect.addEventListener('change', function () {
-            populateSubjects(this.value);
-        });
-
-        // On page load: if a class is already selected (Step 2 shown) but the
-        // subject dropdown only has the default option, repopulate from data.
-        var preSelectedClass = classSelect.value;
-        var subjectOptions   = subjectSelect.querySelectorAll('option[value]:not([value=""])');
-        if (preSelectedClass && subjectOptions.length === 0) {
-            populateSubjects(preSelectedClass);
-        }
-    }
-}());
-</script>
