@@ -135,9 +135,25 @@
                 this.loadUnreadCount();
             }
         });
+    },
+    deleteNotification(id) {
+        fetch('{{ route("notifications.destroy", '') }}/' + id, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.notifications = this.notifications.filter(n => n.id !== id);
+                this.loadUnreadCount();
+            }
+        });
     }
 }"
-x-init="loadNotifications(); loadUnreadCount();">
+x-init="loadUnreadCount(); setInterval(() => { if (!document.hidden) loadUnreadCount(); }, 30000);">
     <button @click="open = !open; if(open) loadNotifications();"
         class="p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-maroon/10 hover:to-maroon/5 dark:hover:from-gray-600 rounded-2xl transition-all duration-300 group shadow-sm relative">
         <i class="fas fa-bell text-gray-700 dark:text-gray-300 text-lg group-hover:animate-pulse"></i>
@@ -478,14 +494,6 @@ x-init="loadNotifications(); loadUnreadCount();">
             <p class="font-semibold text-gray-900 dark:text-white">Notifications</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">View system notifications</p>
         </div>
-        @php
-            $unreadNotifications = auth()->user()->unreadNotifications()->count();
-        @endphp
-        @if($unreadNotifications > 0)
-            <span class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold rounded-full notification-badge">
-                {{ $unreadNotifications }}
-            </span>
-        @endif
     </a>
 
                 <!-- Reports - Only for users with reports.view permission -->
@@ -631,7 +639,6 @@ x-init="loadNotifications(); loadUnreadCount();">
         searchInputs.forEach(input => {
             input.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase();
-                console.log('Searching for:', searchTerm);
                 // Add your search logic here
             });
         });
@@ -648,19 +655,5 @@ x-init="loadNotifications(); loadUnreadCount();">
                 });
             }
         });
-    });
-</script>
-
-
-<script>
-    // Auto-refresh notification count every 30 seconds
-    document.addEventListener('alpine:initialized', () => {
-        setInterval(() => {
-            const notificationComponent = document.querySelector('[x-data*="notifications"]');
-            if (notificationComponent && notificationComponent.__x) {
-                const alpine = notificationComponent.__x;
-                alpine.$data.loadUnreadCount();
-            }
-        }, 30000);
     });
 </script>

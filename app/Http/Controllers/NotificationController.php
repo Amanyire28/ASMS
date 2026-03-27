@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use App\Models\NotificationPreference;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -43,8 +44,10 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = Auth::user()->notifications()->findOrFail($id);
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($id);
         $notification->markAsRead();
+        $this->flushNotificationCache($user->id);
 
         return response()->json(['success' => true]);
     }
@@ -54,7 +57,9 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        Auth::user()->unreadNotifications->markAsRead();
+        $user = Auth::user();
+        $user->unreadNotifications->markAsRead();
+        $this->flushNotificationCache($user->id);
 
         return response()->json(['success' => true]);
     }
@@ -64,7 +69,9 @@ class NotificationController extends Controller
      */
     public function destroy($id)
     {
-        Auth::user()->notifications()->findOrFail($id)->delete();
+        $user = Auth::user();
+        $user->notifications()->findOrFail($id)->delete();
+        $this->flushNotificationCache($user->id);
 
         return response()->json(['success' => true]);
     }
@@ -74,7 +81,9 @@ class NotificationController extends Controller
      */
     public function clearAll()
     {
-        Auth::user()->notifications()->delete();
+        $user = Auth::user();
+        $user->notifications()->delete();
+        $this->flushNotificationCache($user->id);
 
         return response()->json(['success' => true]);
     }
@@ -108,7 +117,11 @@ class NotificationController extends Controller
      */
     public function getUnreadCount()
     {
-        $count = Auth::user()->unreadNotifications()->count();
+        $user = Auth::user();
+        $key = $this->cacheKey($user->id, 'unread-count');
+        $count = Cache::remember($key, 20, function () use ($user) {
+            return $user->unreadNotifications()->count();
+        });
 
         return response()->json(['count' => $count]);
     }
@@ -117,26 +130,42 @@ class NotificationController extends Controller
      * Get latest notifications (for AJAX)
      */
     public function getLatest()
-{
-    $notifications = Auth::user()
-        ->notifications()
-        ->latest()
-        ->take(5)
-        ->get()
-        ->map(function ($notification) {
-            return [
-                'id' => $notification->id,
-                'type' => $notification->type,
-                'data' => $notification->data,
-                'read_at' => $notification->read_at?->toISOString(),
-                'created_at' => $notification->created_at->toISOString(),
-                'icon' => $this->getNotificationIcon($notification->type),
-                'color' => $this->getNotificationColor($notification->type)
-            ];
+    {
+        $user = Auth::user();
+        $key = $this->cacheKey($user->id, 'latest');
+
+        $notifications = Cache::remember($key, 20, function () use ($user) {
+            return $user->notifications()
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($notification) {
+                    return [
+                        'id' => $notification->id,
+                        'type' => $notification->type,
+                        'data' => $notification->data,
+                        'read_at' => $notification->read_at?->toISOString(),
+                        'created_at' => $notification->created_at->toISOString(),
+                        'icon' => $this->getNotificationIcon($notification->type),
+                        'color' => $this->getNotificationColor($notification->type)
+                    ];
+                })
+                ->values();
         });
 
-    return response()->json(['notifications' => $notifications]);
-}
+        return response()->json(['notifications' => $notifications]);
+    }
+
+    private function cacheKey(int $userId, string $suffix): string
+    {
+        return "notifications:user:{$userId}:{$suffix}";
+    }
+
+    private function flushNotificationCache(int $userId): void
+    {
+        Cache::forget($this->cacheKey($userId, 'unread-count'));
+        Cache::forget($this->cacheKey($userId, 'latest'));
+    }
 
     /**
      * Helper: Get notification icon by type

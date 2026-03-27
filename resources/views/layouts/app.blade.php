@@ -7,31 +7,11 @@
 
     <title>@yield('title', school_setting('school_name') .'Dashboard') </title>
 
-
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        maroon: {
-                            DEFAULT: '#800000',
-                            dark: '#5f0000',
-                            light: '#b34d4d'
-                        },
-                    },
-                },
-            },
-        };
-    </script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+    <script defer src="{{ mix('js/app.js') }}"></script>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
 
@@ -309,17 +289,7 @@
 
             <!-- Mobile Page Content -->
             <main class="p-4">
-                <div id="page-content-mobile" class="page-content">
-                    @hasSection('content')
-                        @yield('content')
-                    @else
-                        <div class="text-center py-12">
-                            <i class="fas fa-exclamation-triangle text-5xl text-yellow-500 mb-4"></i>
-                            <h2 class="text-xl font-bold mb-2">No Content</h2>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">Please define a @section('content') in your view.</p>
-                        </div>
-                    @endif
-                </div>
+                <div id="page-content-mobile" class="page-content"></div>
             </main>
         </div>
 
@@ -399,140 +369,6 @@
                         window.router.hideLoading();
                     }
                     alert('Error: ' + error.message);
-                });
-            }
-        }));
-
-        // Notifications Component
-        Alpine.data('notifications', () => ({
-            notifications: [],
-            unreadCount: 0,
-            loading: true,
-
-            init() {
-                this.loadNotifications();
-                this.loadUnreadCount();
-
-                // Auto-refresh every 30 seconds
-                setInterval(() => {
-                    this.loadUnreadCount();
-                }, 30000);
-            },
-
-            loadNotifications() {
-                this.loading = true;
-                fetch('{{ route("notifications.latest") }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        this.notifications = data.notifications;
-                        this.loading = false;
-                    })
-                    .catch(error => {
-                        console.error('Error loading notifications:', error);
-                        this.loading = false;
-                    });
-            },
-
-            loadUnreadCount() {
-                fetch('{{ route("notifications.unreadCount") }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        this.unreadCount = data.count;
-                    })
-                    .catch(error => {
-                        console.error('Error loading unread count:', error);
-                    });
-            },
-
-            markAsRead(id) {
-                fetch('{{ route("notifications.markAsRead", '') }}/' + id, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update local state
-                        const notification = this.notifications.find(n => n.id === id);
-                        if (notification) {
-                            notification.read_at = new Date().toISOString();
-                        }
-                        this.loadUnreadCount();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error marking as read:', error);
-                });
-            },
-
-            markAllAsRead() {
-                fetch('{{ route("notifications.markAllAsRead") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Mark all as read locally
-                        this.notifications.forEach(notification => {
-                            notification.read_at = new Date().toISOString();
-                        });
-                        this.loadUnreadCount();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error marking all as read:', error);
-                });
-            },
-
-            deleteNotification(id) {
-                if (!confirm('Delete this notification?')) return;
-
-                fetch('{{ route("notifications.destroy", '') }}/' + id, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove from local array
-                        this.notifications = this.notifications.filter(n => n.id !== id);
-                        this.loadUnreadCount();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error deleting notification:', error);
-                });
-            },
-
-            clearAll() {
-                if (!confirm('Clear all notifications? This action cannot be undone.')) return;
-
-                fetch('{{ route("notifications.clearAll") }}', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        this.notifications = [];
-                        this.loadUnreadCount();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error clearing all notifications:', error);
                 });
             }
         }));
@@ -783,30 +619,6 @@
         }));
     });
 
-    // Global notification refresh (for badges outside Alpine components)
-    document.addEventListener('alpine:initialized', () => {
-        // Auto-refresh notification count every 30 seconds for all badges
-        setInterval(() => {
-            // Find and update all notification badges
-            const badges = document.querySelectorAll('.notification-badge');
-            if (badges.length > 0) {
-                fetch('{{ route("notifications.unreadCount") }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        badges.forEach(badge => {
-                            const count = data.count;
-                            if (count > 0) {
-                                badge.textContent = count;
-                                badge.classList.remove('hidden');
-                            } else {
-                                badge.classList.add('hidden');
-                            }
-                        });
-                    })
-                    .catch(error => console.error('Error updating notification badges:', error));
-            }
-        }, 30000);
-    });
 </script>
 
     <!-- Theme Management -->
@@ -833,8 +645,6 @@
                     console.warn('Could not save theme:', e);
                 }
 
-                console.log('✅ Theme:', this.current);
-
             },
 
             apply() {
@@ -849,7 +659,17 @@
     <!-- App Initialization & Helpers -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ App initialized');
+            const syncPageContentToMobile = () => {
+                const desktopContent = document.getElementById('page-content');
+                const mobileContent = document.getElementById('page-content-mobile');
+
+                if (desktopContent && mobileContent) {
+                    mobileContent.innerHTML = desktopContent.innerHTML;
+                }
+            };
+
+            syncPageContentToMobile();
+            window.addEventListener('spa:rendered', syncPageContentToMobile);
 
         });
 

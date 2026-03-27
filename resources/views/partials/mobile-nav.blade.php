@@ -5,10 +5,11 @@
 @php
     // Get user data
     $user = auth()->user();
+    $isMobileRequest = preg_match('/Android|iPhone|iPad|iPod|Mobile/i', request()->userAgent() ?? '') === 1;
     $userName = $user->name ?? 'User';
     $userRole = $user->getRoleNames()->first() ?? 'Administrator';
     $userInitials = strtoupper(substr($userName, 0, 2));
-    $unreadNotifications = $user->unreadNotifications()->count();
+    $unreadNotifications = $isMobileRequest ? $user->unreadNotifications()->count() : 0;
 
     // Get school data
     $schoolLogo = school_setting('school_logo');
@@ -83,8 +84,8 @@
         <!-- Notifications Content -->
         <div class="flex-1 overflow-y-auto p-4">
             @php
-                // Get real notifications from database
-                $notifications = $user->notifications()->take(20)->get();
+                // Avoid running mobile-only notification queries on desktop requests.
+                $notifications = $isMobileRequest ? $user->notifications()->latest()->take(20)->get() : collect();
                 $groupedNotifications = $notifications->groupBy(function ($notification) {
                     return $notification->created_at->isToday() ? 'Today' :
                            ($notification->created_at->isYesterday() ? 'Yesterday' :
