@@ -22976,6 +22976,14 @@ __webpack_require__.r(__webpack_exports__);
 
 window.Alpine = alpinejs__WEBPACK_IMPORTED_MODULE_1__["default"];
 
+// ── Per-subject "Out Of" totals store (used by multi-subject mark sheet) ──
+alpinejs__WEBPACK_IMPORTED_MODULE_1__["default"].store('marksTotals', {
+  totals: {},
+  getTotal: function getTotal(id) {
+    return parseFloat(this.totals[String(id)]) || 100;
+  }
+});
+
 // ── Marks entry selector component ──────────────────────────
 alpinejs__WEBPACK_IMPORTED_MODULE_1__["default"].data('marksEntrySelector', function () {
   return {

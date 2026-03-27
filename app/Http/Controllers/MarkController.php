@@ -60,11 +60,10 @@ class MarkController extends Controller
             ? $this->teacherClasses($teacher)
             : ClassModel::where('is_active', true)->orderBy('name')->get();
 
-        $terms           = ['Term 1', 'Term 2', 'Term 3'];
-        $years           = $this->academicYears();
-        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
+        $terms = ['Term 1', 'Term 2', 'Term 3'];
+        $years = $this->academicYears();
 
-        return view('modules.marks.entry', compact('classes', 'terms', 'years', 'subjectsByClass'));
+        return view('modules.marks.entry', compact('classes', 'terms', 'years'));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -94,50 +93,64 @@ class MarkController extends Controller
     {
         $request->validate([
             'class_id'      => 'required|exists:classes,id',
-            'subject_id'    => 'required|exists:subjects,id',
             'term'          => 'required|string',
             'academic_year' => 'required|string',
         ]);
 
         $teacher = $this->currentTeacher();
-
-        // Teachers can only enter marks for their own assignments
-        if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $request->subject_id)) {
-            abort(403, 'You are not assigned to teach this subject in this class.');
-        }
-
         $class   = ClassModel::findOrFail($request->class_id);
-        $subject = Subject::findOrFail($request->subject_id);
 
-        // Subject dropdown for Step-1 card shown alongside the grid
-        $classSubjectsQuery = $class->subjects()->where('subjects.is_active', true)->orderBy('subjects.name');
+        // Load subjects for columns — teacher-scoped when applicable
+        $classSubjectsQuery = $class->subjects()
+            ->where('subjects.is_active', true)
+            ->orderBy('subjects.name');
         if ($teacher) {
             $classSubjectsQuery->where('class_subject.teacher_id', $teacher->id);
         }
         $classSubjects = $classSubjectsQuery->get();
 
+        if ($teacher && $classSubjects->isEmpty()) {
+            abort(403, 'You are not assigned to teach any subjects in this class.');
+        }
+
         $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
 
-        $existingMarks = Mark::where([
+        // Load all existing marks for this class/term/year and build a 2D map [student_id][subject_id]
+        $flat = Mark::where([
             'class_id'      => $request->class_id,
-            'subject_id'    => $request->subject_id,
             'term'          => $request->term,
             'academic_year' => $request->academic_year,
-        ])->get()->keyBy('student_id');
+        ])->whereIn('subject_id', $classSubjects->pluck('id'))->get();
 
-        $selection = $request->only(['class_id', 'subject_id', 'term', 'academic_year']);
+        $existingMarks = [];
+        foreach ($flat as $m) {
+            $existingMarks[$m->student_id][$m->subject_id] = $m;
+        }
+
+        // Default "Out Of" per subject — use the most recent saved value, or 100
+        $initTotals = [];
+        foreach ($classSubjects as $s) {
+            $initTotals[(string) $s->id] = 100;
+            foreach ($flat as $m) {
+                if ($m->subject_id == $s->id) {
+                    $initTotals[(string) $s->id] = (float) $m->total_marks;
+                    break;
+                }
+            }
+        }
+
+        $selection = $request->only(['class_id', 'term', 'academic_year']);
 
         $classes = $teacher
             ? $this->teacherClasses($teacher)
             : ClassModel::where('is_active', true)->orderBy('name')->get();
 
-        $terms           = ['Term 1', 'Term 2', 'Term 3'];
-        $years           = $this->academicYears();
-        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
+        $terms = ['Term 1', 'Term 2', 'Term 3'];
+        $years = $this->academicYears();
 
         return view('modules.marks.entry', compact(
-            'class', 'subject', 'classSubjects', 'students',
-            'existingMarks', 'selection', 'classes', 'terms', 'years', 'subjectsByClass'
+            'class', 'classSubjects', 'students',
+            'existingMarks', 'initTotals', 'selection', 'classes', 'terms', 'years'
         ));
     }
 
@@ -147,43 +160,46 @@ class MarkController extends Controller
     public function storeMultiple(Request $request)
     {
         $request->validate([
-            'class_id'               => 'required|exists:classes,id',
-            'subject_id'             => 'required|exists:subjects,id',
-            'term'                   => 'required|string',
-            'academic_year'          => 'required|string',
-            'marks'                  => 'required|array',
-            'marks.*.student_id'     => 'required|exists:students,id',
-            'marks.*.marks_obtained' => 'required|numeric|min:0',
-            'marks.*.total_marks'    => 'required|numeric|min:1|max:400',
-            'marks.*.remarks'        => 'nullable|string|max:255',
+            'class_id'      => 'required|exists:classes,id',
+            'term'          => 'required|string',
+            'academic_year' => 'required|string',
+            'total'         => 'required|array',
+            'total.*'       => 'required|numeric|min:1|max:400',
+            'marks'         => 'required|array',
+            'marks.*'       => 'array',
+            'marks.*.*'     => 'nullable|numeric|min:0',
         ]);
 
         $teacher = $this->currentTeacher();
 
-        if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $request->subject_id)) {
-            abort(403, 'You are not assigned to teach this subject in this class.');
-        }
+        foreach ($request->marks as $studentId => $subjects) {
+            foreach ($subjects as $subjectId => $obtained) {
+                if ($obtained === null || $obtained === '') continue;
 
-        foreach ($request->marks as $row) {
-            $obtained = (float) $row['marks_obtained'];
-            $total    = (float) $row['total_marks'];
-            $obtained = min($obtained, $total);
+                // Skip subjects not assigned to this teacher
+                if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $subjectId)) {
+                    continue;
+                }
 
-            Mark::updateOrCreate(
-                [
-                    'student_id'    => $row['student_id'],
-                    'subject_id'    => $request->subject_id,
-                    'class_id'      => $request->class_id,
-                    'term'          => $request->term,
-                    'academic_year' => $request->academic_year,
-                ],
-                [
-                    'marks_obtained' => $obtained,
-                    'total_marks'    => $total,
-                    'grade'          => $this->grade($obtained, $total),
-                    'remarks'        => $row['remarks'] ?? null,
-                ]
-            );
+                $total    = (float) ($request->total[$subjectId] ?? 100);
+                $obtained = min((float) $obtained, $total);
+
+                Mark::updateOrCreate(
+                    [
+                        'student_id'    => $studentId,
+                        'subject_id'    => $subjectId,
+                        'class_id'      => $request->class_id,
+                        'term'          => $request->term,
+                        'academic_year' => $request->academic_year,
+                    ],
+                    [
+                        'marks_obtained' => $obtained,
+                        'total_marks'    => $total,
+                        'grade'          => $this->grade($obtained, $total),
+                        'remarks'        => null,
+                    ]
+                );
+            }
         }
 
         return redirect()->route('marks.index')->with('success', 'Marks saved successfully.');

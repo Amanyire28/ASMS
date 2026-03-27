@@ -4,6 +4,12 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+// ── Per-subject "Out Of" totals store (used by multi-subject mark sheet) ──
+Alpine.store('marksTotals', {
+    totals: {},
+    getTotal: function(id) { return parseFloat(this.totals[String(id)]) || 100; }
+});
+
 // ── Marks entry selector component ──────────────────────────
 Alpine.data('marksEntrySelector', function() {
     return {
