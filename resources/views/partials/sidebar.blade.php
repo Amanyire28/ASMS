@@ -453,7 +453,7 @@
         overflow-y: auto;
         overflow-x: hidden;
         transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: linear-gradient(180deg, #800000 0%, #5f0000 100%) !important;
+        background: linear-gradient(180deg, #1565C0 0%, #0D47A1 100%) !important;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -472,9 +472,9 @@
         border-radius: 20px;
     }
 
-    /* Maroon dark for dropdown backgrounds */
+    /* Blue dark for dropdown backgrounds */
     .bg-maroon-dark {
-        background-color: #5f0000 !important;
+        background-color: #0D47A1 !important;
     }
 
     .dark .bg-maroon-dark {
@@ -513,7 +513,7 @@
     .nav-link.bg-white i,
     .nav-link.bg-white span,
     .nav-link-icon.bg-white\/30 i {
-        color: #800000 !important;
+        color: #1565C0 !important;
     }
 
     /* Smooth transitions */
