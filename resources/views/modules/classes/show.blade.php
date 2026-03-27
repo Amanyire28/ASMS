@@ -6,6 +6,18 @@
 
 @section('content')
 <div class="space-y-6">
+
+    @if(session('success'))
+    <div class="px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
+        <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+        <i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}
+    </div>
+    @endif
+
     <!-- Class Information Card -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         <!-- Header -->
@@ -331,14 +343,15 @@
             @if($class->subjects->count() > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($class->subjects as $subject)
+                    @php $pivotTeacher = $teachers->find($subject->pivot->teacher_id); @endphp
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h4 class="font-medium text-gray-900 dark:text-gray-100">{{ $subject->name }}</h4>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">{{ $subject->code }}</p>
-                                @if($subject->pivot->teacher)
+                                @if($pivotTeacher)
                                     <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                        Teacher: {{ $subject->pivot->teacher->first_name }} {{ $subject->pivot->teacher->last_name }}
+                                        Teacher: {{ $pivotTeacher->first_name }} {{ $pivotTeacher->last_name }}
                                     </p>
                                 @endif
                             </div>
@@ -368,10 +381,123 @@
     </div>
 </div>
 
-<!-- Assign Subjects Modal (placeholder) -->
+{{-- ── Assign Subjects Modal ───────────────────────────────────── --}}
+<div id="assignSubjectsModal"
+     class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4"
+     style="display:none">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+
+        {{-- Modal header --}}
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Assign Subjects &mdash; {{ $class->full_name }}
+            </h3>
+            <button type="button" onclick="closeAssignModal()"
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+
+        {{-- Modal body (scrollable) --}}
+        <div class="overflow-y-auto flex-1 px-6 py-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Tick the subjects you want to assign to this class. Optionally pick a teacher per subject.
+                Unticking a subject will remove it from the class.
+            </p>
+
+            <form id="assignSubjectsForm"
+                  method="POST"
+                  action="{{ route('classes.assign-subjects', $class) }}">
+                @csrf
+
+                @if($allSubjects->isEmpty())
+                    <p class="text-center text-gray-400 py-8">No active subjects found. Create subjects first.</p>
+                @else
+                <div class="space-y-2">
+                    @foreach($allSubjects as $subject)
+                    @php $assigned = $class->subjects->find($subject->id); @endphp
+                    <div class="flex items-center gap-3 p-3 border rounded-lg transition-colors
+                                {{ $assigned ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700' : 'border-gray-200 dark:border-gray-700' }}"
+                         id="subrow-{{ $subject->id }}">
+
+                        <input type="checkbox"
+                               name="subjects[]"
+                               value="{{ $subject->id }}"
+                               id="subck-{{ $subject->id }}"
+                               {{ $assigned ? 'checked' : '' }}
+                               onchange="toggleSubjectRow({{ $subject->id }}, this.checked)"
+                               class="w-4 h-4 rounded border-gray-300 text-maroon focus:ring-maroon flex-shrink-0">
+
+                        <label for="subck-{{ $subject->id }}"
+                               class="flex-1 text-sm font-medium text-gray-900 dark:text-white cursor-pointer select-none">
+                            {{ $subject->name }}
+                            @if($subject->code)
+                                <span class="font-normal text-gray-400 ml-1">({{ $subject->code }})</span>
+                            @endif
+                        </label>
+
+                        <select name="teachers[{{ $subject->id }}]"
+                                id="subteacher-{{ $subject->id }}"
+                                {{ !$assigned ? 'disabled' : '' }}
+                                class="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm
+                                       dark:bg-gray-700 dark:text-white w-44 flex-shrink-0 transition-opacity
+                                       {{ !$assigned ? 'opacity-40' : '' }}">
+                            <option value="">No teacher</option>
+                            @foreach($teachers as $teacher)
+                            <option value="{{ $teacher->id }}"
+                                {{ $assigned && $assigned->pivot->teacher_id == $teacher->id ? 'selected' : '' }}>
+                                {{ $teacher->first_name }} {{ $teacher->last_name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </form>
+        </div>
+
+        {{-- Modal footer --}}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+            <button type="button" onclick="closeAssignModal()"
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors">
+                Cancel
+            </button>
+            <button type="submit" form="assignSubjectsForm"
+                    class="inline-flex items-center px-5 py-2 bg-maroon hover:bg-maroon-dark
+                           text-white rounded-lg text-sm font-medium transition-colors">
+                <i class="fas fa-save mr-2"></i> Save Assignments
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 function showAssignSubjectsModal() {
-    alert('Subject assignment feature will be implemented soon!');
+    var modal = document.getElementById('assignSubjectsModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
+function closeAssignModal() {
+    document.getElementById('assignSubjectsModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+function toggleSubjectRow(id, checked) {
+    var sel = document.getElementById('subteacher-' + id);
+    var row = document.getElementById('subrow-' + id);
+    if (checked) {
+        sel.disabled = false;
+        sel.classList.remove('opacity-40');
+        row.classList.add('border-blue-300', 'bg-blue-50', 'dark:bg-blue-900/20', 'dark:border-blue-700');
+        row.classList.remove('border-gray-200', 'dark:border-gray-700');
+    } else {
+        sel.disabled = true;
+        sel.classList.add('opacity-40');
+        row.classList.remove('border-blue-300', 'bg-blue-50', 'dark:bg-blue-900/20', 'dark:border-blue-700');
+        row.classList.add('border-gray-200', 'dark:border-gray-700');
+    }
+}
+// Close on backdrop click
+document.getElementById('assignSubjectsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAssignModal();
+});
 </script>
 @endsection

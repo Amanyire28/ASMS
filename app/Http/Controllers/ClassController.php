@@ -60,8 +60,10 @@ class ClassController extends Controller
      */
     public function show(ClassModel $class)
     {
-        $class->load(['students', 'subjects.pivot.teacher', 'teachers', 'classTeacher']);
-        return view('modules.classes.show', compact('class'));
+        $class->load(['students', 'subjects', 'classTeacher', 'classLevel.levelTeacher']);
+        $allSubjects = Subject::where('is_active', true)->orderBy('name')->get();
+        $teachers    = Teacher::orderBy('first_name')->get();
+        return view('modules.classes.show', compact('class', 'allSubjects', 'teachers'));
     }
 
     /**
@@ -122,17 +124,17 @@ class ClassController extends Controller
      */
     public function assignSubjects(Request $request, ClassModel $class)
     {
-        $validated = $request->validate([
-            'subjects' => 'required|array',
+        $request->validate([
+            'subjects'   => 'nullable|array',
             'subjects.*' => 'exists:subjects,id',
-            'teachers' => 'array',
-            'teachers.*' => 'nullable|exists:teachers,id'
+            'teachers'   => 'nullable|array',
+            'teachers.*' => 'nullable|exists:teachers,id',
         ]);
 
         $syncData = [];
-        foreach ($validated['subjects'] as $index => $subjectId) {
+        foreach ($request->input('subjects', []) as $subjectId) {
             $syncData[$subjectId] = [
-                'teacher_id' => $validated['teachers'][$index] ?? null
+                'teacher_id' => $request->input("teachers.{$subjectId}") ?: null,
             ];
         }
 
