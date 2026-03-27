@@ -150,8 +150,8 @@
             <input type="hidden" name="term"           value="{{ $selection['term'] }}">
             <input type="hidden" name="academic_year"  value="{{ $selection['academic_year'] }}">
 
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="w-auto border-separate border-spacing-0 text-sm">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700">
+                <table class="w-full table-fixed border-separate border-spacing-0 text-sm">
                     <thead>
                         <tr>
                             {{-- Sticky # --}}
@@ -160,11 +160,11 @@
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">#</th>
                             {{-- Sticky student name --}}
                             <th class="sticky left-10 z-20 bg-gray-50 dark:bg-gray-800
-                                       py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase w-44
+                                       py-3 px-3 text-left text-xs font-semibold text-gray-500 uppercase w-36
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
-                            {{-- One column per subject — fixed width so the table overflows and scrolls --}}
+                            {{-- Subject columns share remaining width equally via table-fixed --}}
                             @foreach($classSubjects as $subject)
-                            <th class="bg-gray-50 dark:bg-gray-800 py-2 px-2 text-center w-[116px]
+                            <th class="bg-gray-50 dark:bg-gray-800 py-2 px-1 text-center
                                        border-b-2 border-r last:border-r-0 border-gray-200 dark:border-gray-700">
                                 {{-- Truncated name; full name shown on hover via title --}}
                                 <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate w-full
@@ -181,7 +181,7 @@
                                         name="total[{{ $subject->id }}]"
                                         x-model.number="$store.marksTotals.totals['{{ $subject->id }}']"
                                         min="1" max="400" step="0.5"
-                                        class="w-14 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
+                                        class="w-10 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
                                                text-xs text-center focus:ring-1 focus:ring-maroon focus:border-maroon
                                                dark:bg-gray-700 dark:text-white font-normal">
                                 </div>
@@ -224,7 +224,7 @@
                                     name="marks[{{ $student->id }}][{{ $subject->id }}]"
                                     x-model="obt"
                                     min="0" step="0.5" placeholder="—"
-                                    class="w-[88px] border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5
+                                    class="w-full max-w-[56px] border border-gray-300 dark:border-gray-600 rounded px-1 py-1
                                            text-sm text-center focus:ring-2 focus:ring-maroon focus:border-maroon
                                            dark:bg-gray-700 dark:text-white">
                                 <div class="text-xs font-semibold mt-0.5 h-4 leading-none"
