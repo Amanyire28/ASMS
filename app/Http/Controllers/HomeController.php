@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\Mark;
 use App\Models\ReportGeneration;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\ClassModel;
