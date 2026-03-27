@@ -248,76 +248,79 @@
 </div>
 @endsection
 
-@push('scripts')
 <script>
-// ── Grade helpers ────────────────────────────────────────────
-function gradeFromPct(pct) {
-    if (pct >= 90) return ['A+', 'text-green-600'];
-    if (pct >= 80) return ['A',  'text-green-600'];
-    if (pct >= 70) return ['B+', 'text-blue-600'];
-    if (pct >= 60) return ['B',  'text-blue-600'];
-    if (pct >= 50) return ['C+', 'text-yellow-600'];
-    if (pct >= 40) return ['C',  'text-yellow-600'];
-    if (pct >= 30) return ['D',  'text-orange-500'];
-    return ['F', 'text-red-600'];
-}
+(function () {
+    // Subjects preloaded per class — no AJAX needed
+    var subjectsByClass = @json($subjectsByClass ?? []);
 
-function updateRowGrade(row) {
-    const obt   = parseFloat(row.querySelector('.marks-obtained').value);
-    const tot   = parseFloat(row.querySelector('.total-marks').value) || 100;
-    const badge = row.querySelector('.grade-badge');
-    if (!isNaN(obt) && row.querySelector('.marks-obtained').value !== '') {
-        const pct         = Math.min((obt / tot) * 100, 100).toFixed(1);
-        const [g, color]  = gradeFromPct(parseFloat(pct));
-        badge.textContent = pct + '% \u2014 ' + g;
-        badge.className   = 'grade-badge text-sm font-semibold ' + color;
-    } else {
-        badge.textContent = '\u2014';
-        badge.className   = 'grade-badge text-sm font-semibold text-gray-400';
+    function gradeFromPct(pct) {
+        if (pct >= 90) return ['A+', 'text-green-600'];
+        if (pct >= 80) return ['A',  'text-green-600'];
+        if (pct >= 70) return ['B+', 'text-blue-600'];
+        if (pct >= 60) return ['B',  'text-blue-600'];
+        if (pct >= 50) return ['C+', 'text-yellow-600'];
+        if (pct >= 40) return ['C',  'text-yellow-600'];
+        if (pct >= 30) return ['D',  'text-orange-500'];
+        return ['F', 'text-red-600'];
     }
-}
 
-document.querySelectorAll('tr[data-row]').forEach(function (row) {
-    var obt = row.querySelector('.marks-obtained');
-    var tot = row.querySelector('.total-marks');
-    if (obt) obt.addEventListener('input', function () { updateRowGrade(row); });
-    if (tot) tot.addEventListener('input', function () { updateRowGrade(row); });
-});
+    function updateRowGrade(row) {
+        var obt   = parseFloat(row.querySelector('.marks-obtained').value);
+        var tot   = parseFloat(row.querySelector('.total-marks').value) || 100;
+        var badge = row.querySelector('.grade-badge');
+        if (!isNaN(obt) && row.querySelector('.marks-obtained').value !== '') {
+            var pct         = Math.min((obt / tot) * 100, 100).toFixed(1);
+            var res         = gradeFromPct(parseFloat(pct));
+            badge.textContent = pct + '% \u2014 ' + res[0];
+            badge.className   = 'grade-badge text-sm font-semibold ' + res[1];
+        } else {
+            badge.textContent = '\u2014';
+            badge.className   = 'grade-badge text-sm font-semibold text-gray-400';
+        }
+    }
 
-// ── AJAX: subjects for chosen class ──────────────────────────
-var classSelect   = document.getElementById('classSelect');
-var subjectSelect = document.getElementById('subjectSelect');
-var subjectsUrl   = '{{ route("api.subjects-by-class") }}';
+    document.querySelectorAll('tr[data-row]').forEach(function (row) {
+        var obt = row.querySelector('.marks-obtained');
+        var tot = row.querySelector('.total-marks');
+        if (obt) obt.addEventListener('input', function () { updateRowGrade(row); });
+        if (tot) tot.addEventListener('input', function () { updateRowGrade(row); });
+    });
 
-// If page reloaded with a class pre-selected (Step 2 shown), the options
-// are already server-rendered so we don't need to re-fetch.
-var hasPreloaded = subjectSelect && subjectSelect.querySelectorAll('option[value]').length > 1;
+    // ── Subject dropdown — populated from preloaded data (no AJAX) ──
+    var classSelect   = document.getElementById('classSelect');
+    var subjectSelect = document.getElementById('subjectSelect');
 
-if (classSelect && subjectSelect && !hasPreloaded) {
-    classSelect.addEventListener('change', function () {
-        var classId = this.value;
-        subjectSelect.innerHTML = '<option value="">Loading\u2026</option>';
+    function populateSubjects(classId) {
+        if (!subjectSelect) return;
         if (!classId) {
             subjectSelect.innerHTML = '<option value="">\u2014 Select Class First \u2014</option>';
             return;
         }
-        fetch(subjectsUrl + '?class_id=' + encodeURIComponent(classId))
-            .then(function (r) { return r.json(); })
-            .then(function (subjects) {
-                if (!subjects.length) {
-                    subjectSelect.innerHTML = '<option value="">No subjects assigned to this class</option>';
-                    return;
-                }
-                subjectSelect.innerHTML = '<option value="">\u2014 Select Subject \u2014</option>' +
-                    subjects.map(function (s) {
-                        var label = s.name + (s.code ? ' (' + s.code + ')' : '');
-                        return '<option value="' + s.id + '">' + label + '</option>';
-                    }).join('');
-            })
-            .catch(function () {
-                subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
-            });
-    });
-}
+        var subjects = subjectsByClass[classId] || [];
+        if (!subjects.length) {
+            subjectSelect.innerHTML = '<option value="">No subjects assigned to this class</option>';
+            return;
+        }
+        subjectSelect.innerHTML = '<option value="">\u2014 Select Subject \u2014</option>' +
+            subjects.map(function (s) {
+                var label = s.name + (s.code ? ' (' + s.code + ')' : '');
+                return '<option value="' + s.id + '">' + label + '</option>';
+            }).join('');
+    }
+
+    if (classSelect && subjectSelect) {
+        // Re-populate subjects when class changes
+        classSelect.addEventListener('change', function () {
+            populateSubjects(this.value);
+        });
+
+        // On page load: if a class is already selected (Step 2 shown) but the
+        // subject dropdown only has the default option, repopulate from data.
+        var preSelectedClass = classSelect.value;
+        var subjectOptions   = subjectSelect.querySelectorAll('option[value]:not([value=""])');
+        if (preSelectedClass && subjectOptions.length === 0) {
+            populateSubjects(preSelectedClass);
+        }
+    }
+}());
 </script>
-@endpush

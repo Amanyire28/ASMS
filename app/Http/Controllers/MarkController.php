@@ -41,7 +41,9 @@ class MarkController extends Controller
         $terms   = ['Term 1', 'Term 2', 'Term 3'];
         $years   = $this->academicYears();
 
-        return view('modules.marks.entry', compact('classes', 'terms', 'years'));
+        $subjectsByClass = $this->buildSubjectsByClass($classes);
+
+        return view('modules.marks.entry', compact('classes', 'terms', 'years', 'subjectsByClass'));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -89,9 +91,11 @@ class MarkController extends Controller
         $terms     = ['Term 1', 'Term 2', 'Term 3'];
         $years     = $this->academicYears();
 
+        $subjectsByClass = $this->buildSubjectsByClass($classes);
+
         return view('modules.marks.entry', compact(
             'class', 'subject', 'classSubjects', 'students',
-            'existingMarks', 'selection', 'classes', 'terms', 'years'
+            'existingMarks', 'selection', 'classes', 'terms', 'years', 'subjectsByClass'
         ));
     }
 
@@ -218,5 +222,22 @@ class MarkController extends Controller
     {
         $y = (int) date('Y');
         return ["{$y}-" . ($y + 1), ($y - 1) . "-{$y}", ($y + 1) . "-" . ($y + 2)];
+    }
+
+    private function buildSubjectsByClass($classes): array
+    {
+        $classes->load(['subjects' => function ($q) {
+            $q->where('subjects.is_active', true)->orderBy('subjects.name');
+        }]);
+
+        $map = [];
+        foreach ($classes as $cls) {
+            $map[$cls->id] = $cls->subjects->map(fn($s) => [
+                'id'   => $s->id,
+                'name' => $s->name,
+                'code' => $s->code,
+            ])->values()->all();
+        }
+        return $map;
     }
 }

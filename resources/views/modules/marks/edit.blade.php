@@ -123,35 +123,37 @@
 </div>
 @endsection
 
-@push('scripts')
 <script>
-function gradeFromPct(pct) {
-    if (pct >= 90) return ['A+', 'bg-green-100',  'text-green-700'];
-    if (pct >= 80) return ['A',  'bg-green-100',  'text-green-700'];
-    if (pct >= 70) return ['B+', 'bg-blue-100',   'text-blue-700'];
-    if (pct >= 60) return ['B',  'bg-blue-100',   'text-blue-700'];
-    if (pct >= 50) return ['C+', 'bg-yellow-100', 'text-yellow-700'];
-    if (pct >= 40) return ['C',  'bg-yellow-100', 'text-yellow-700'];
-    if (pct >= 30) return ['D',  'bg-orange-100', 'text-orange-700'];
-    return           ['F',  'bg-red-100',    'text-red-700'];
-}
-
-function updatePreview() {
-    var obt   = parseFloat(document.getElementById('marksObtained').value);
-    var tot   = parseFloat(document.getElementById('totalMarks').value) || 100;
-    var pctEl = document.getElementById('previewPct');
-    var badge = document.getElementById('previewGrade');
-
-    if (!isNaN(obt)) {
-        var pct              = Math.min((obt / tot) * 100, 100).toFixed(1);
-        var result           = gradeFromPct(parseFloat(pct));
-        pctEl.textContent    = pct + '%';
-        badge.textContent    = result[0];
-        badge.className      = 'px-2 py-0.5 rounded-full text-xs font-bold ' + result[1] + ' ' + result[2];
+(function () {
+    function gradeFromPct(pct) {
+        if (pct >= 90) return ['A+', 'bg-green-100',  'text-green-700'];
+        if (pct >= 80) return ['A',  'bg-green-100',  'text-green-700'];
+        if (pct >= 70) return ['B+', 'bg-blue-100',   'text-blue-700'];
+        if (pct >= 60) return ['B',  'bg-blue-100',   'text-blue-700'];
+        if (pct >= 50) return ['C+', 'bg-yellow-100', 'text-yellow-700'];
+        if (pct >= 40) return ['C',  'bg-yellow-100', 'text-yellow-700'];
+        if (pct >= 30) return ['D',  'bg-orange-100', 'text-orange-700'];
+        return           ['F',  'bg-red-100',    'text-red-700'];
     }
-}
 
-document.getElementById('marksObtained').addEventListener('input', updatePreview);
-document.getElementById('totalMarks').addEventListener('input', updatePreview);
+    function updatePreview() {
+        var obt   = parseFloat(document.getElementById('marksObtained').value);
+        var tot   = parseFloat(document.getElementById('totalMarks').value) || 100;
+        var pctEl = document.getElementById('previewPct');
+        var badge = document.getElementById('previewGrade');
+
+        if (!isNaN(obt)) {
+            var pct    = Math.min((obt / tot) * 100, 100).toFixed(1);
+            var result = gradeFromPct(parseFloat(pct));
+            pctEl.textContent = pct + '%';
+            badge.textContent = result[0];
+            badge.className   = 'px-2 py-0.5 rounded-full text-xs font-bold ' + result[1] + ' ' + result[2];
+        }
+    }
+
+    var obtEl = document.getElementById('marksObtained');
+    var totEl = document.getElementById('totalMarks');
+    if (obtEl) obtEl.addEventListener('input', updatePreview);
+    if (totEl) totEl.addEventListener('input', updatePreview);
+}());
 </script>
-@endpush
