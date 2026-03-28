@@ -25,29 +25,38 @@
 
         /* ---- Header ---- */
         .header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+            text-align: center;
             padding-bottom: 14px;
             margin-bottom: 0;
         }
-        .header-left  { flex: 1; text-align: left; }
-        .header-center { flex-shrink: 0; text-align: center; }
-        .header-right { flex: 1; text-align: right; }
+        .brand-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .brand-line img { height: 64px; width: 64px; object-fit: contain; }
         .header-rule { border: none; border-top: 2px solid #111827; margin: 0 0 3px 0; }
         .header-rule-2 { border: none; border-top: 1px solid #6b7280; margin: 0 0 18px 0; }
-        .header-center img { height: 72px; width: 72px; object-fit: contain; }
         .school-name {
             font-size: 20px;
             font-weight: 700;
             color: #111827;
             letter-spacing: .5px;
         }
-        .letterhead { font-size: 12px; color: #6b7280; margin-top: 3px; }
+        .letterhead { font-size: 12px; color: #6b7280; margin-top: 4px; }
         .report-title {
             display: inline-block;
             margin-top: 6px;
             border: 1px solid #374151;
+            color: #374151;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 16px;
+            border-radius: 12px;
+        }
             color: #374151;
             font-size: 11px;
             font-weight: 700;
@@ -224,22 +233,21 @@
         }
     <\/script>
 
-        {{-- School Header: name left | logo center | letterhead right --}}
+        {{-- School Header --}}
         <div class="header">
-            <div class="header-left">
-                <div class="school-name">{{ school_setting('school_name', 'School Name') }}</div>
-            </div>
-            <div class="header-center">
+            {{-- Brand line: School Name | Logo | School Name --}}
+            <div class="brand-line">
+                <span class="school-name">{{ school_setting('school_name', 'School Name') }}</span>
                 @if(school_logo_url())
                 <img src="{{ school_logo_url() }}" alt="Logo">
                 @endif
+                <span class="school-name">{{ school_setting('school_name', 'School Name') }}</span>
             </div>
-            <div class="header-right">
-                @if(school_setting('letterhead_text'))
-                <div class="letterhead">{{ school_setting('letterhead_text') }}</div>
-                @endif
-                <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
-            </div>
+            {{-- Details below --}}
+            @if(school_setting('letterhead_text'))
+            <div class="letterhead">{{ school_setting('letterhead_text') }}</div>
+            @endif
+            <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
         </div>
         <hr class="header-rule">
         <hr class="header-rule-2">
