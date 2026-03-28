@@ -13,9 +13,9 @@ class Student extends Model
     {
         parent::boot();
 
-        static::created(function ($student) {
-            $student->student_id = date('Y') . str_pad($student->id, 4, '0', STR_PAD_LEFT);
-            $student->saveQuietly();
+        static::creating(function ($student) {
+            $nextId = (static::max('id') ?? 0) + 1;
+            $student->student_id = date('Y') . str_pad($nextId, 4, '0', STR_PAD_LEFT);
         });
     }
 
