@@ -102,18 +102,88 @@ class ReportController extends Controller
             ->with('success', 'Report deleted successfully.');
     }
 
+    public function viewOrGenerate(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id'    => 'required|exists:students,id',
+            'term'          => 'required|string',
+            'academic_year' => 'required|string',
+            'report_type'   => 'required|in:report_card,progress_report,transcript',
+        ]);
+
+        // Find existing report or create a new one
+        $report = ReportGeneration::where([
+            'student_id'    => $validated['student_id'],
+            'term'          => $validated['term'],
+            'academic_year' => $validated['academic_year'],
+            'report_type'   => $validated['report_type'],
+        ])->first();
+
+        if (!$report) {
+            $marksExist = Mark::where([
+                'student_id'    => $validated['student_id'],
+                'term'          => $validated['term'],
+                'academic_year' => $validated['academic_year'],
+            ])->exists();
+
+            if (!$marksExist) {
+                // Return error inline for HTMX, redirect for normal requests
+                $errorMsg = 'No marks found for this student in the selected term and academic year.';
+                if ($request->header('HX-Request')) {
+                    return response(
+                        '<div class="bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm">'
+                        . '<i class="fas fa-exclamation-circle mr-2"></i>' . e($errorMsg)
+                        . '</div>',
+                        200
+                    );
+                }
+                return redirect()->route('reports.create')->with('error', $errorMsg);
+            }
+
+            $report = ReportGeneration::create([
+                'report_number' => ReportGeneration::generateReportNumber(),
+                'student_id'    => $validated['student_id'],
+                'term'          => $validated['term'],
+                'academic_year' => $validated['academic_year'],
+                'report_type'   => $validated['report_type'],
+                'generated_by'  => Auth::id(),
+                'generated_at'  => now(),
+            ]);
+        }
+
+        $report->load(['student.class', 'generatedBy']);
+        $marks   = $report->getMarks();
+        $summary = $report->calculateSummary($marks);
+
+        return view('modules.reports.show', compact('report', 'marks', 'summary'));
+    }
+
     public function getStudentsByClass(Request $request)
     {
-        $classId = $request->get('class_id');
+        $classId      = $request->get('class_id');
+        $term         = $request->get('term');
+        $academicYear = $request->get('academic_year');
+
         $students = Student::where('class_id', $classId)
                           ->where('is_active', true)
                           ->orderBy('first_name')
                           ->get(['id', 'first_name', 'last_name', 'student_id']);
 
-        return response()->json($students->map(fn($s) => [
-            'id'         => $s->id,
-            'name'       => $s->first_name . ' ' . $s->last_name,
-            'student_id' => $s->student_id,
-        ]));
+        return response()->json($students->map(function ($s) use ($term, $academicYear) {
+            $hasMarks = ($term && $academicYear)
+                ? Mark::where([
+                    'student_id'    => $s->id,
+                    'term'          => $term,
+                    'academic_year' => $academicYear,
+                ])->exists()
+                : null; // null means "not checked"
+
+            return [
+                'id'         => $s->id,
+                'name'       => $s->first_name . ' ' . $s->last_name,
+                'student_id' => $s->student_id,
+                'has_marks'  => $hasMarks,
+            ];
+        }));
     }
 }

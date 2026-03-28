@@ -504,6 +504,7 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/create', [ReportController::class, 'create'])->name('reports.create');
     Route::post('reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    Route::get('reports/view-or-generate', [ReportController::class, 'viewOrGenerate'])->name('reports.view-or-generate');
     Route::get('reports/{report}', [ReportController::class, 'show'])->name('reports.show');
     Route::get('reports/{report}/print', [ReportController::class, 'print'])->name('reports.print');
     Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');

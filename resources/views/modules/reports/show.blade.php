@@ -25,6 +25,10 @@
                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors">
                 <i class="fas fa-print"></i> Print
             </a>
+            <a href="{{ route('reports.print', $report) }}?download=1" target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                <i class="fas fa-download"></i> Download PDF
+            </a>
             @canany('reports.delete')
             <form action="{{ route('reports.destroy', $report) }}" method="POST"
                   onsubmit="return confirm('Delete this report?')">

@@ -194,6 +194,15 @@
 
     <div class="page" style="margin-top: 60px;">
 
+    <script>
+        // Auto-trigger print dialog when ?download=1 is in the URL
+        if (new URLSearchParams(window.location.search).get('download') === '1') {
+            window.addEventListener('load', function () {
+                setTimeout(function () { window.print(); }, 400);
+            });
+        }
+    <\/script>
+
         {{-- School Header --}}
         <div class="header">
             @if(school_logo_url())
