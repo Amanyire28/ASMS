@@ -169,7 +169,15 @@ class ReportController extends Controller
                           ->orderBy('first_name')
                           ->get(['id', 'first_name', 'last_name', 'student_id']);
 
-        return response()->json($students->map(function ($s) use ($term, $academicYear) {
+        // Pre-fetch all distinct term+year combinations that have marks for students in this class
+        $studentIds = $students->pluck('id');
+        $allPeriods = Mark::whereIn('student_id', $studentIds)
+            ->select('student_id', 'term', 'academic_year')
+            ->distinct()
+            ->get()
+            ->groupBy('student_id');
+
+        return response()->json($students->map(function ($s) use ($term, $academicYear, $allPeriods) {
             $hasMarks = ($term && $academicYear)
                 ? Mark::where([
                     'student_id'    => $s->id,
@@ -178,11 +186,17 @@ class ReportController extends Controller
                 ])->exists()
                 : null; // null means "not checked"
 
+            // Build list of periods that actually have marks for this student
+            $periods = isset($allPeriods[$s->id])
+                ? $allPeriods[$s->id]->map(fn($m) => $m->term . ' / ' . $m->academic_year)->values()->all()
+                : [];
+
             return [
-                'id'         => $s->id,
-                'name'       => $s->first_name . ' ' . $s->last_name,
-                'student_id' => $s->student_id,
-                'has_marks'  => $hasMarks,
+                'id'               => $s->id,
+                'name'             => $s->first_name . ' ' . $s->last_name,
+                'student_id'       => $s->student_id,
+                'has_marks'        => $hasMarks,
+                'available_periods' => $periods,
             ];
         }));
     }

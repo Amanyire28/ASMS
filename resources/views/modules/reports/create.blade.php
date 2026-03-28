@@ -84,10 +84,13 @@
                     <select id="filter_academic_year"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">— Select Year —</option>
-                        @php $cy = date('Y'); @endphp
-                        @for($y = $cy - 1; $y <= $cy + 1; $y++)
-                        <option value="{{ $y }}-{{ $y + 1 }}">{{ $y }}-{{ $y + 1 }}</option>
-                        @endfor
+                        @php
+                            $cy = date('Y');
+                            $yearOptions = ["{$cy}-" . ($cy+1), ($cy-1) . "-{$cy}", ($cy+1) . "-" . ($cy+2)];
+                        @endphp
+                        @foreach($yearOptions as $yo)
+                        <option value="{{ $yo }}">{{ $yo }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -251,11 +254,21 @@
                 students.forEach(function(s, i) {
                     var hasMarks = s.has_marks;
                     var viewUrl  = buildViewUrl(s.id);
+                    var periods  = s.available_periods || [];
+
+                    // Build a helpful tooltip: when no marks for selected period but marks exist elsewhere
+                    var noMarksTitle = 'No marks entered for this term/year.';
+                    if (hasMarks === false && periods.length > 0) {
+                        noMarksTitle = 'Marks available for: ' + periods.join(', ') + '. Please change the Term or Academic Year filter.';
+                    }
 
                     var marksBadge = hasMarks === true
                         ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i>Has Marks</span>'
                         : (hasMarks === false
-                            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="fas fa-times-circle mr-1"></i>No Marks</span>'
+                            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 cursor-help" title="' + noMarksTitle + '">'
+                              + '<i class="fas fa-times-circle mr-1"></i>No Marks'
+                              + (periods.length > 0 ? ' <i class="fas fa-info-circle ml-1 text-red-500"></i>' : '')
+                              + '</span>'
                             : '<span class="text-gray-400 text-xs">—</span>');
 
                     var actionBtn = hasMarks !== false
@@ -265,7 +278,7 @@
                           + 'hx-push-url="true" '
                           + 'class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">'
                           + '<i class="fas fa-eye"></i> View Report Card</a>'
-                        : '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-lg cursor-not-allowed" title="Enter marks first">'
+                        : '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-lg cursor-not-allowed" title="' + noMarksTitle + '">'
                           + '<i class="fas fa-ban"></i> No Marks</span>';
 
                     var initials = s.name.split(' ').map(function(w){ return w[0] || ''; }).slice(0,2).join('').toUpperCase();
