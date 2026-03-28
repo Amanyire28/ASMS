@@ -40,6 +40,37 @@
               enctype="multipart/form-data" class="p-6 space-y-6">
             @csrf
 
+            {{-- Logo Header Text --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Header Logo Text
+                    <span class="text-gray-400 font-normal text-xs ml-1">— text on each side of the school logo</span>
+                </label>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <input type="text" id="logo_left_text" name="logo_left_text"
+                               value="{{ old('logo_left_text', $reportSettings['logo_left_text'] ?? '') }}"
+                               placeholder="e.g. ASMS"
+                               maxlength="100"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 @error('logo_left_text') border-red-400 @enderror">
+                        <p class="mt-1 text-xs text-gray-400 text-center">Left of logo</p>
+                    </div>
+                    <div class="shrink-0 flex flex-col items-center text-gray-400 text-xs px-2">
+                        <i class="fas fa-image text-2xl text-gray-300 mb-1"></i>
+                        LOGO
+                    </div>
+                    <div class="flex-1">
+                        <input type="text" id="logo_right_text" name="logo_right_text"
+                               value="{{ old('logo_right_text', $reportSettings['logo_right_text'] ?? '') }}"
+                               placeholder="e.g. High School"
+                               maxlength="100"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 @error('logo_right_text') border-red-400 @enderror">
+                        <p class="mt-1 text-xs text-gray-400 text-center">Right of logo</p>
+                    </div>
+                </div>
+                <p class="mt-1 text-xs text-gray-400">If left blank, the school name will be auto-split around the logo.</p>
+            </div>
+
             {{-- Letterhead Text --}}
             <div>
                 <label for="letterhead_text" class="block text-sm font-medium text-gray-700 mb-1">

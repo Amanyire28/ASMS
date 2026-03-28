@@ -203,6 +203,8 @@ class SchoolSettingController extends Controller
         abort_unless(auth()->user()->can('system.settings'), 403);
 
         $validator = Validator::make($request->all(), [
+            'logo_left_text'    => 'nullable|string|max:100',
+            'logo_right_text'   => 'nullable|string|max:100',
             'letterhead_text' => 'nullable|string|max:1000',
             'report_footer_text' => 'nullable|string|max:500',
             'principal_name' => 'required|string|max:255',
@@ -244,6 +246,8 @@ class SchoolSettingController extends Controller
         }
 
         // Update other report settings
+        SchoolSetting::set('logo_left_text', $request->logo_left_text, 'text', 'report');
+        SchoolSetting::set('logo_right_text', $request->logo_right_text, 'text', 'report');
         SchoolSetting::set('letterhead_text', $request->letterhead_text, 'text', 'report');
         SchoolSetting::set('report_footer_text', $request->report_footer_text, 'text', 'report');
         SchoolSetting::set('principal_name', $request->principal_name, 'text', 'report');
