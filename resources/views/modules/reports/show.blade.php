@@ -55,9 +55,14 @@
 
         {{-- School Header --}}
         <div class="px-6 pt-6 pb-4 text-center">
-            {{-- Brand line: School Name | Logo | School Name --}}
+            @php
+                $nameParts = explode(' ', school_setting('school_name', 'School Name'), 2);
+                $nameLeft  = $nameParts[0];
+                $nameRight = $nameParts[1] ?? '';
+            @endphp
+            {{-- Brand line: first word | Logo | rest of name --}}
             <div class="flex items-center justify-center gap-3">
-                <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ school_setting('school_name', 'School Name') }}</h2>
+                <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ $nameLeft }}</h2>
                 <div class="shrink-0">
                     @if(school_logo_url())
                     <img src="{{ school_logo_url() }}" alt="School Logo" class="h-16 w-16 object-contain">
@@ -67,7 +72,7 @@
                     </div>
                     @endif
                 </div>
-                <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ school_setting('school_name', 'School Name') }}</h2>
+                <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ $nameRight }}</h2>
             </div>
             {{-- Details below --}}
             @if(school_setting('letterhead_text'))

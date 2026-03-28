@@ -235,13 +235,18 @@
 
         {{-- School Header --}}
         <div class="header">
-            {{-- Brand line: School Name | Logo | School Name --}}
+            {{-- Brand line: first word | Logo | rest of name --}}
+            @php
+                $nameParts = explode(' ', school_setting('school_name', 'School Name'), 2);
+                $nameLeft  = $nameParts[0];
+                $nameRight = $nameParts[1] ?? '';
+            @endphp
             <div class="brand-line">
-                <span class="school-name">{{ school_setting('school_name', 'School Name') }}</span>
+                <span class="school-name">{{ $nameLeft }}</span>
                 @if(school_logo_url())
                 <img src="{{ school_logo_url() }}" alt="Logo">
                 @endif
-                <span class="school-name">{{ school_setting('school_name', 'School Name') }}</span>
+                <span class="school-name">{{ $nameRight }}</span>
             </div>
             {{-- Details below --}}
             @if(school_setting('letterhead_text'))
