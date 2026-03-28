@@ -25,13 +25,18 @@
 
         /* ---- Header ---- */
         .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 16px;
             padding-bottom: 14px;
             margin-bottom: 0;
         }
+        .header-left  { flex: 1; text-align: left; }
+        .header-center { flex-shrink: 0; text-align: center; }
+        .header-right { flex: 1; text-align: right; }
         .header-rule { border: none; border-top: 2px solid #111827; margin: 0 0 3px 0; }
         .header-rule-2 { border: none; border-top: 1px solid #6b7280; margin: 0 0 18px 0; }
-        .header img { height: 60px; object-fit: contain; margin-bottom: 6px; }
+        .header-center img { height: 72px; width: 72px; object-fit: contain; }
         .school-name {
             font-size: 20px;
             font-weight: 700;
@@ -41,7 +46,7 @@
         .letterhead { font-size: 12px; color: #6b7280; margin-top: 3px; }
         .report-title {
             display: inline-block;
-            margin-top: 8px;
+            margin-top: 6px;
             border: 1px solid #374151;
             color: #374151;
             font-size: 11px;
@@ -219,16 +224,22 @@
         }
     <\/script>
 
-        {{-- School Header --}}
+        {{-- School Header: name left | logo center | letterhead right --}}
         <div class="header">
-            @if(school_logo_url())
-            <img src="{{ school_logo_url() }}" alt="Logo">
-            @endif
-            <div class="school-name">{{ school_setting('school_name', 'School Name') }}</div>
-            @if(school_setting('letterhead_text'))
-            <div class="letterhead">{{ school_setting('letterhead_text') }}</div>
-            @endif
-            <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
+            <div class="header-left">
+                <div class="school-name">{{ school_setting('school_name', 'School Name') }}</div>
+            </div>
+            <div class="header-center">
+                @if(school_logo_url())
+                <img src="{{ school_logo_url() }}" alt="Logo">
+                @endif
+            </div>
+            <div class="header-right">
+                @if(school_setting('letterhead_text'))
+                <div class="letterhead">{{ school_setting('letterhead_text') }}</div>
+                @endif
+                <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
+            </div>
         </div>
         <hr class="header-rule">
         <hr class="header-rule-2">

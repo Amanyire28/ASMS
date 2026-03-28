@@ -53,19 +53,32 @@
     {{-- Report Card --}}
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
 
-        {{-- School Header --}}
-        <div class="px-6 pt-6 pb-4 text-center">
-            @if(school_logo_url())
-            <img src="{{ school_logo_url() }}" alt="School Logo" class="mx-auto h-16 mb-2 object-contain">
-            @endif
-            <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ school_setting('school_name', 'School Name') }}</h2>
-            @if(school_setting('letterhead_text'))
-            <p class="text-gray-500 text-sm mt-1">{{ school_setting('letterhead_text') }}</p>
-            @endif
-            <div class="mt-3 inline-block border border-gray-400 rounded px-3 py-1">
-                <span class="text-sm font-semibold uppercase tracking-wider text-gray-700">
-                    {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
-                </span>
+        {{-- School Header: name left | logo center | letterhead right --}}
+        <div class="px-6 pt-6 pb-4 flex items-center gap-4">
+            {{-- Left: School Name --}}
+            <div class="flex-1 text-left">
+                <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ school_setting('school_name', 'School Name') }}</h2>
+            </div>
+            {{-- Center: Logo --}}
+            <div class="shrink-0 flex flex-col items-center">
+                @if(school_logo_url())
+                <img src="{{ school_logo_url() }}" alt="School Logo" class="h-20 w-20 object-contain">
+                @else
+                <div class="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center border border-gray-300">
+                    <i class="fas fa-school text-3xl text-gray-400"></i>
+                </div>
+                @endif
+            </div>
+            {{-- Right: Letterhead + Report Type --}}
+            <div class="flex-1 text-right">
+                @if(school_setting('letterhead_text'))
+                <p class="text-gray-500 text-sm">{{ school_setting('letterhead_text') }}</p>
+                @endif
+                <div class="mt-2 inline-block border border-gray-400 rounded px-3 py-1">
+                    <span class="text-sm font-semibold uppercase tracking-wider text-gray-700">
+                        {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
+                    </span>
+                </div>
             </div>
         </div>
 
