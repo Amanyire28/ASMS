@@ -184,6 +184,18 @@ class SchoolSettingController extends Controller
     }
 
     /**
+     * Show report card settings page
+     */
+    public function editReportCardSettings()
+    {
+        abort_unless(auth()->user()->can('system.settings'), 403);
+
+        $reportSettings = SchoolSetting::getByGroup('report')->pluck('value', 'key');
+
+        return view('modules.settings.report-card', compact('reportSettings'));
+    }
+
+    /**
      * Update report card settings
      */
     public function updateReportCardSettings(Request $request)

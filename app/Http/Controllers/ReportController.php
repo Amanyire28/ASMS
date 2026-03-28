@@ -107,9 +107,13 @@ class ReportController extends Controller
         $classId = $request->get('class_id');
         $students = Student::where('class_id', $classId)
                           ->where('is_active', true)
-                          ->orderBy('name')
-                          ->get(['id', 'name', 'student_number']);
+                          ->orderBy('first_name')
+                          ->get(['id', 'first_name', 'last_name', 'student_id']);
 
-        return response()->json($students);
+        return response()->json($students->map(fn($s) => [
+            'id'         => $s->id,
+            'name'       => $s->first_name . ' ' . $s->last_name,
+            'student_id' => $s->student_id,
+        ]));
     }
 }

@@ -462,6 +462,10 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         Route::get('settings/school-profile', [SchoolSettingController::class, 'edit'])
             ->name('settings.school-profile');
 
+        // Dedicated report card settings page
+        Route::get('settings/report-card', [SchoolSettingController::class, 'editReportCardSettings'])
+            ->name('settings.report-card');
+
         // Update routes for each section
         Route::post('settings/school-profile/basic-info', [SchoolSettingController::class, 'updateBasicInfo'])
             ->name('settings.update-basic-info');

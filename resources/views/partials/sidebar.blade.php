@@ -298,8 +298,8 @@
         <div class="relative">
             <button @click="toggleDropdown('reports', $event)"
                 :class="{
-                    'bg-blue-700 !text-white font-semibold': isActive('/admin/report-card'),
-                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/report-card')
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/reports') || isActive('/admin/settings/report-card'),
+                    'text-gray-900 hover:bg-blue-200': !(isActive('/admin/reports') || isActive('/admin/settings/report-card'))
                 }"
                 class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -314,15 +314,41 @@
                  class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
 
                 @canany('reports.view')
-                <a href="/admin/report-card/form"
+                <a href="/admin/reports/create"
                    @click="handleLinkClick()"
                    :class="{
-                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/report-card/form'),
-                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/report-card/form')
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/reports/create'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/reports/create')
                    }"
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
-                    <i class="fas fa-graduation-cap w-4 text-center"></i>
-                    <span>Report Cards</span>
+                    <i class="fas fa-plus w-4 text-center"></i>
+                    <span>Generate Report Card</span>
+                </a>
+                @endcanany
+
+                @canany('reports.view')
+                <a href="/admin/reports"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/reports'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/reports')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-list w-4 text-center"></i>
+                    <span>All Reports</span>
+                </a>
+                @endcanany
+
+                @canany('system.settings')
+                <a href="/admin/settings/report-card"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/settings/report-card'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/settings/report-card')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-cog w-4 text-center"></i>
+                    <span>Report Card Settings</span>
                 </a>
                 @endcanany
             </div>
@@ -412,9 +438,9 @@
 
         <!-- Reports Icon -->
         @canany('reports.view')
-        <a href="/admin/report-card/form"
+        <a href="/admin/reports"
            @click="handleLinkClick()"
-           :class="{'bg-blue-700': isActive('/admin/report-card/form')}"
+           :class="{'bg-blue-700': isActive('/admin/reports')}"
            class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-file-alt text-xl"></i>
             <span class="sidebar-tooltip">Reports</span>
