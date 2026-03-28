@@ -89,7 +89,7 @@
                     <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Date of Birth <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth', $student->date_of_birth) }}"
+                    <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth', $student->date_of_birth?->format('Y-m-d')) }}"
                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-maroon focus:border-transparent dark:bg-gray-700 dark:text-white @error('date_of_birth') border-red-500 @enderror"
                            required>
                     @error('date_of_birth')
@@ -230,7 +230,7 @@
                         <option value="">Select Class (Optional)</option>
                         @foreach($classes as $class)
                         <option value="{{ $class->id }}" {{ old('class_id', $student->class_id) == $class->id ? 'selected' : '' }}>
-                            {{ $class->name }} ({{ $class->grade_level }})
+                            {{ $class->name }}
                         </option>
                         @endforeach
                     </select>
@@ -244,7 +244,7 @@
                     <label for="enrollment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Enrollment Date <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" name="enrollment_date" id="enrollment_date" value="{{ old('enrollment_date', $student->enrollment_date) }}"
+                    <input type="date" name="enrollment_date" id="enrollment_date" value="{{ old('enrollment_date', $student->enrollment_date?->format('Y-m-d')) }}"
                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-maroon focus:border-transparent dark:bg-gray-700 dark:text-white @error('enrollment_date') border-red-500 @enderror"
                            required>
                     @error('enrollment_date')
