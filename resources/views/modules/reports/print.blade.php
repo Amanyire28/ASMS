@@ -29,21 +29,21 @@
             padding-bottom: 14px;
             margin-bottom: 0;
         }
-        .header-rule { border: none; border-top: 3px solid #1d4ed8; margin: 0 0 3px 0; }
-        .header-rule-2 { border: none; border-top: 2px solid #93c5fd; margin: 0 0 18px 0; }
+        .header-rule { border: none; border-top: 2px solid #111827; margin: 0 0 3px 0; }
+        .header-rule-2 { border: none; border-top: 1px solid #6b7280; margin: 0 0 18px 0; }
         .header img { height: 60px; object-fit: contain; margin-bottom: 6px; }
         .school-name {
             font-size: 20px;
             font-weight: 700;
-            color: #1d4ed8;
+            color: #111827;
             letter-spacing: .5px;
         }
         .letterhead { font-size: 12px; color: #6b7280; margin-top: 3px; }
         .report-title {
             display: inline-block;
             margin-top: 8px;
-            background: #1d4ed8;
-            color: #fff;
+            border: 1px solid #374151;
+            color: #374151;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 1.5px;
@@ -92,7 +92,7 @@
         }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         thead th {
-            background: #1e3a8a;
+            background: #374151;
             color: #fff;
             font-size: 11px;
             font-weight: 700;
@@ -117,16 +117,16 @@
         .grade-c  { background: #fef9c3; color: #854d0e; }
         .grade-f  { background: #fee2e2; color: #991b1b; }
         tfoot td {
-            background: #eff6ff;
+            background: #f3f4f6;
             font-weight: 700;
             font-size: 12px;
             padding: 9px 10px;
-            border-top: 2px solid #93c5fd;
+            border-top: 2px solid #9ca3af;
         }
         tfoot td.center { text-align: center; }
         .total-grade {
             display: inline-block;
-            background: #1d4ed8;
+            background: #374151;
             color: #fff;
             padding: 3px 10px;
             border-radius: 10px;

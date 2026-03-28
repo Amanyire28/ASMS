@@ -54,24 +54,24 @@
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
 
         {{-- School Header --}}
-        <div class="bg-blue-700 text-white px-6 py-5 text-center">
+        <div class="px-6 pt-6 pb-4 text-center">
             @if(school_logo_url())
             <img src="{{ school_logo_url() }}" alt="School Logo" class="mx-auto h-16 mb-2 object-contain">
             @endif
-            <h2 class="text-xl font-bold tracking-wide">{{ school_setting('school_name', 'School Name') }}</h2>
+            <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ school_setting('school_name', 'School Name') }}</h2>
             @if(school_setting('letterhead_text'))
-            <p class="text-blue-200 text-sm mt-1">{{ school_setting('letterhead_text') }}</p>
+            <p class="text-gray-500 text-sm mt-1">{{ school_setting('letterhead_text') }}</p>
             @endif
-            <div class="mt-3 inline-block bg-white/20 rounded px-3 py-1">
-                <span class="text-sm font-semibold uppercase tracking-wider">
+            <div class="mt-3 inline-block border border-gray-400 rounded px-3 py-1">
+                <span class="text-sm font-semibold uppercase tracking-wider text-gray-700">
                     {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
                 </span>
             </div>
         </div>
 
-        {{-- Double-line separator between school header and student details --}}
-        <div class="h-[3px] bg-blue-800"></div>
-        <div class="h-[2px] bg-blue-300 mt-[3px]"></div>
+        {{-- Double-line separator --}}
+        <div class="mx-6 border-t-2 border-gray-800"></div>
+        <div class="mx-6 mt-1 border-t border-gray-400"></div>
 
         <div class="p-6 space-y-6">
 
