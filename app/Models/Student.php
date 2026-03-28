@@ -9,6 +9,16 @@ class Student extends Model
 {
     use HasFactory;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($student) {
+            $student->student_id = date('Y') . str_pad($student->id, 4, '0', STR_PAD_LEFT);
+            $student->saveQuietly();
+        });
+    }
+
     protected $fillable = [
         'student_id',
         'first_name',

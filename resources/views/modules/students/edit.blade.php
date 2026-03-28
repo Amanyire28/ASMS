@@ -35,17 +35,14 @@
                 Personal Information
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Student ID -->
+                <!-- Student ID (read-only) -->
                 <div>
-                    <label for="student_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Student ID <span class="text-red-500">*</span>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Student ID
                     </label>
-                    <input type="text" name="student_id" id="student_id" value="{{ old('student_id', $student->student_id) }}"
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-maroon focus:border-transparent dark:bg-gray-700 dark:text-white @error('student_id') border-red-500 @enderror"
-                           required>
-                    @error('student_id')
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                    @enderror
+                    <div class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-mono text-sm">
+                        {{ $student->student_id }}
+                    </div>
                 </div>
 
                 <!-- Photo -->
