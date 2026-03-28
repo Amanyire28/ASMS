@@ -26,10 +26,11 @@
         /* ---- Header ---- */
         .header {
             text-align: center;
-            border-bottom: 3px solid #1d4ed8;
             padding-bottom: 14px;
-            margin-bottom: 18px;
+            margin-bottom: 0;
         }
+        .header-rule { border: none; border-top: 3px solid #1d4ed8; margin: 0 0 3px 0; }
+        .header-rule-2 { border: none; border-top: 2px solid #93c5fd; margin: 0 0 18px 0; }
         .header img { height: 60px; object-fit: contain; margin-bottom: 6px; }
         .school-name {
             font-size: 20px;
@@ -52,16 +53,31 @@
         }
 
         /* ---- Student Info ---- */
-        .student-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
+        .student-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
             background: #f8fafc;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             padding: 12px 14px;
             margin-bottom: 18px;
         }
+        .student-details {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .student-divider { width: 1px; background: #d1d5db; flex-shrink: 0; align-self: stretch; }
+        .student-photo { flex-shrink: 0; text-align: center; width: 72px; }
+        .student-photo img { width: 72px; height: 88px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; }
+        .student-photo .photo-initials {
+            width: 72px; height: 88px; background: #dbeafe; color: #1d4ed8;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; font-size: 22px; font-weight: 700; border: 1px solid #bfdbfe;
+        }
+        .student-photo .photo-label { font-size: 9px; color: #9ca3af; margin-top: 3px; }
         .info-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .7px; }
         .info-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 3px; }
 
@@ -214,24 +230,37 @@
             @endif
             <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
         </div>
+        <hr class="header-rule">
+        <hr class="header-rule-2">
 
-        {{-- Student Info --}}
-        <div class="student-grid">
-            <div>
-                <div class="info-label">Student Name</div>
-                <div class="info-value">{{ $report->student->full_name }}</div>
+        {{-- Student Info: details on left, photo on right --}}
+        <div class="student-section">
+            <div class="student-details">
+                <div>
+                    <div class="info-label">Student Name</div>
+                    <div class="info-value">{{ $report->student->full_name }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Student ID</div>
+                    <div class="info-value">{{ $report->student->student_id }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Class</div>
+                    <div class="info-value">{{ $report->student->class->name ?? 'N/A' }}</div>
+                </div>
+                <div>
+                    <div class="info-label">Term / Year</div>
+                    <div class="info-value">{{ $report->term }}, {{ $report->academic_year }}</div>
+                </div>
             </div>
-            <div>
-                <div class="info-label">Student ID</div>
-                <div class="info-value">{{ $report->student->student_id }}</div>
-            </div>
-            <div>
-                <div class="info-label">Class</div>
-                <div class="info-value">{{ $report->student->class->name ?? 'N/A' }}</div>
-            </div>
-            <div>
-                <div class="info-label">Term / Year</div>
-                <div class="info-value">{{ $report->term }}, {{ $report->academic_year }}</div>
+            <div class="student-divider"></div>
+            <div class="student-photo">
+                @if($report->student->photo)
+                <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo">
+                @else
+                <div class="photo-initials">{{ strtoupper(substr($report->student->first_name, 0, 1) . substr($report->student->last_name, 0, 1)) }}</div>
+                @endif
+                <div class="photo-label">Photo</div>
             </div>
         </div>
 

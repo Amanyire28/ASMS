@@ -69,25 +69,46 @@
             </div>
         </div>
 
+        {{-- Double-line separator between school header and student details --}}
+        <div class="h-[3px] bg-blue-800"></div>
+        <div class="h-[2px] bg-blue-300 mt-[3px]"></div>
+
         <div class="p-6 space-y-6">
 
-            {{-- Student Info --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 rounded-lg p-4">
-                <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student Name</p>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->full_name }}</p>
+            {{-- Student Info: details on left, profile photo on right --}}
+            <div class="flex items-stretch gap-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                {{-- Details --}}
+                <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student Name</p>
+                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->full_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student ID</p>
+                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->student_id }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Class</p>
+                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->class->name ?? 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Term / Year</p>
+                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->term }}, {{ $report->academic_year }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student ID</p>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->student_id }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Class</p>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->class->name ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Term / Year</p>
-                    <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->term }}, {{ $report->academic_year }}</p>
+                {{-- Vertical divider --}}
+                <div class="w-px bg-gray-300 shrink-0"></div>
+                {{-- Profile Photo --}}
+                <div class="shrink-0 flex flex-col items-center justify-center w-24">
+                    @if($report->student->photo)
+                    <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo"
+                         class="h-24 w-20 object-cover rounded-lg border-2 border-gray-300 shadow-sm">
+                    @else
+                    <div class="h-24 w-20 rounded-lg bg-blue-100 flex items-center justify-center border-2 border-gray-300">
+                        <span class="text-blue-700 font-bold text-xl">{{ strtoupper(substr($report->student->first_name, 0, 1) . substr($report->student->last_name, 0, 1)) }}</span>
+                    </div>
+                    @endif
+                    <p class="text-xs text-gray-400 mt-1">Photo</p>
                 </div>
             </div>
 
