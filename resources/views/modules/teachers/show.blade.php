@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', $teacher->full_name . ' - Teacher Profile')
-@section('page-title', 'Teacher Profile')
-@section('page-description', 'View teacher details and manage assignments')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', $teacher->full_name . ' - Teacher Profile')
+    @section('page-title', 'Teacher Profile')
+    @section('page-description', 'View teacher details and manage assignments')
+    @section('content')
+@endif
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Success/Error Messages -->
     @if(session('success'))
@@ -748,4 +748,7 @@
         transform: translateY(-2px);
     }
 </style>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

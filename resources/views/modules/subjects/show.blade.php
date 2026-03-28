@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', $subject->name)
-@section('page-title', $subject->name)
-@section('page-description', 'Subject details and information')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', $subject->name)
+    @section('page-title', $subject->name)
+    @section('page-description', 'Subject details and information')
+    @section('content')
+@endif
 <div class="max-w-6xl mx-auto">
     <!-- Breadcrumb -->
     <nav class="flex mb-6" aria-label="Breadcrumb">
@@ -254,4 +254,7 @@
         </div>
     </div>
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

@@ -1,8 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'User Management')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'User Management')
+    @section('content')
+@endif
 <div class="py-4 sm:py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-6">
@@ -72,7 +72,10 @@
         </div>
     </div>
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif
 
 @push('styles')
 <style>

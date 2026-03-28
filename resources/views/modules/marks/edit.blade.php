@@ -1,8 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'Edit Mark')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Edit Mark')
+    @section('content')
+@endif
 <div class="px-4 py-6 max-w-2xl mx-auto">
 
     {{-- Header --}}
@@ -121,7 +121,10 @@
     </div>
 
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif
 
 <script>
 (function () {

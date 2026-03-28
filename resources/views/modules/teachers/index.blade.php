@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', 'Teachers Management')
-@section('page-title', 'Teachers Management')
-@section('page-description', 'View and manage all teachers')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Teachers Management')
+    @section('page-title', 'Teachers Management')
+    @section('page-description', 'View and manage all teachers')
+    @section('content')
+@endif
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
 
@@ -610,4 +610,7 @@
         }
     }
 </style>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

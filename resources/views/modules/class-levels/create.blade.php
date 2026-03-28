@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', 'Add Class Level')
-@section('page-title', 'Add New Class Level')
-@section('page-description', 'Create a new class level for the school')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Add Class Level')
+    @section('page-title', 'Add New Class Level')
+    @section('page-description', 'Create a new class level for the school')
+    @section('content')
+@endif
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
     <!-- Header -->
     <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -128,4 +128,7 @@
         </form>
     </div>
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

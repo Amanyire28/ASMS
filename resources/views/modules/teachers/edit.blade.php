@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', 'Edit ' . $teacher->full_name)
-@section('page-title', 'Edit Teacher')
-@section('page-description', 'Update teacher information and assignments')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Edit ' . $teacher->full_name)
+    @section('page-title', 'Edit Teacher')
+    @section('page-description', 'Update teacher information and assignments')
+    @section('content')
+@endif
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
 
@@ -1007,4 +1007,7 @@
         100% { transform: rotate(360deg); }
     }
 </style>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

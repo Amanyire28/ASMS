@@ -1,8 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'Announcements')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Announcements')
+    @section('content')
+@endif
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
     <a href="{{ route('announcements.create') }}"
@@ -255,4 +255,7 @@ document.head.appendChild(style);
         color: rgb(216 180 254);
     }
 </style>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

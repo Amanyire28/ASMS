@@ -1,10 +1,10 @@
-@extends('layouts.app')
-
-@section('title', 'Subjects')
-@section('page-title', 'Subjects')
-@section('page-description', 'Manage school subjects and their details')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Subjects')
+    @section('page-title', 'Subjects')
+    @section('page-description', 'Manage school subjects and their details')
+    @section('content')
+@endif
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
     <!-- Header -->
     <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -208,4 +208,7 @@
         @endif
     </div>
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

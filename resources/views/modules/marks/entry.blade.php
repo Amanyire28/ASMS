@@ -1,8 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'Marks Entry')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Marks Entry')
+    @section('content')
+@endif
 <div class="px-4 py-6 max-w-full mx-auto">
 
     {{-- Header --}}
@@ -257,5 +257,8 @@
     @endisset
 
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif
 

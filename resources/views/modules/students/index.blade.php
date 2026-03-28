@@ -1,9 +1,9 @@
 {{-- resources/views/modules/students/index.blade.php --}}
-@extends('layouts.app')
-
-@section('title', 'Students')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'Students')
+    @section('content')
+@endif
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Students</h1>
     <a href="{{ route('students.create') }}"
@@ -146,4 +146,7 @@
     </div>
     @endif
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif

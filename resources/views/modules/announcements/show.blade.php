@@ -1,8 +1,8 @@
-@extends('layouts.app')
-
-@section('title', 'View Announcement')
-
-@section('content')
+@if(!request()->header('HX-Request'))
+    @extends('layouts.app')
+    @section('title', 'View Announcement')
+    @section('content')
+@endif
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -117,4 +117,7 @@
         </div>
     </div>
 </div>
-@endsection
+
+@if(!request()->header('HX-Request'))
+    @endsection
+@endif
