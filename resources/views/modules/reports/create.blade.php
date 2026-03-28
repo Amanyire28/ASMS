@@ -159,34 +159,54 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const classSelect   = document.getElementById('class_id');
-    const studentSelect = document.getElementById('student_id');
+(function () {
+    // Runs immediately — works for both initial page load and HTMX partial navigation
+    // (DOMContentLoaded does NOT re-fire on HTMX swaps, so we cannot rely on it)
+    var classSelect   = document.getElementById('class_id');
+    var studentSelect = document.getElementById('student_id');
+
+    if (!classSelect || !studentSelect) return;
+
+    // Guard against double-binding if somehow executed twice
+    if (classSelect.dataset.ajaxBound) return;
+    classSelect.dataset.ajaxBound = 'true';
 
     classSelect.addEventListener('change', function () {
-        const classId = this.value;
+        var classId = this.value;
+
         studentSelect.innerHTML = '<option value="">Loading...</option>';
         studentSelect.disabled  = true;
 
         if (!classId) {
             studentSelect.innerHTML = '<option value="">— Select Class First —</option>';
+            studentSelect.disabled  = true;
             return;
         }
 
-        fetch(`{{ route('api.students-by-class') }}?class_id=${classId}`)
-            .then(r => r.json())
-            .then(students => {
-                studentSelect.innerHTML = '<option value="">— Select Student —</option>';
-                students.forEach(s => {
-                    studentSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.student_id})</option>`;
-                });
-                studentSelect.disabled = false;
-            })
-            .catch(() => {
-                studentSelect.innerHTML = '<option value="">Error loading students</option>';
+        fetch('{{ route('api.students-by-class') }}?class_id=' + encodeURIComponent(classId), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function (students) {
+            studentSelect.innerHTML = '<option value="">— Select Student —</option>';
+            students.forEach(function (s) {
+                var opt = document.createElement('option');
+                opt.value       = s.id;
+                opt.textContent = s.name + ' (' + s.student_id + ')';
+                studentSelect.appendChild(opt);
             });
+            studentSelect.disabled = false;
+        })
+        .catch(function (err) {
+            console.error('Failed to load students:', err);
+            studentSelect.innerHTML = '<option value="">Error loading students — please retry</option>';
+            studentSelect.disabled  = false;
+        });
     });
-});
+})();
 </script>
 
 @if(!request()->header('HX-Request'))

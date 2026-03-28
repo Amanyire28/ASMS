@@ -79,8 +79,8 @@ class ReportController extends Controller
     public function show(ReportGeneration $report)
     {
         $report->load(['student.class', 'generatedBy']);
-        $marks = $report->getMarks();
-        $summary = $report->calculateSummary();
+        $marks   = $report->getMarks();
+        $summary = $report->calculateSummary($marks);
 
         return view('modules.reports.show', compact('report', 'marks', 'summary'));
     }
@@ -88,8 +88,8 @@ class ReportController extends Controller
     public function print(ReportGeneration $report)
     {
         $report->load(['student.class', 'generatedBy']);
-        $marks = $report->getMarks();
-        $summary = $report->calculateSummary();
+        $marks   = $report->getMarks();
+        $summary = $report->calculateSummary($marks);
 
         return view('modules.reports.print', compact('report', 'marks', 'summary'));
     }

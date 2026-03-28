@@ -42,10 +42,12 @@ class ReportGeneration extends Model
         ])->with('subject')->get();
     }
 
-    public function calculateSummary()
+    public function calculateSummary($marks = null)
     {
-        $marks = $this->getMarks();
-        
+        if ($marks === null) {
+            $marks = $this->getMarks();
+        }
+
         if ($marks->isEmpty()) {
             return [
                 'total_marks' => 0,
