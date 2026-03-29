@@ -132,12 +132,19 @@
             </div>
 
             {{-- Marks Table --}}
+            <style>
+                /* Full border for report marks table */
+                .report-table { border-collapse: collapse; width: 100%; }
+                .report-table th, .report-table td { border: 1px solid #e5e7eb; }
+                .report-table thead th { background: #374151; color: #fff; }
+            </style>
+
             <div>
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Academic Performance</h3>
                 @if($marks->count() > 0)
                 @php $showTotal = count($examTypes) > 1; @endphp
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full report-table">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Subject</th>

@@ -140,10 +140,10 @@
             letter-spacing: .8px;
             padding: 8px 10px;
             text-align: left;
-            border-right: 1px solid #e5e7eb;
+            border: 1px solid #e5e7eb;
         }
-        thead th:last-child { border-right: none; }
         tbody td { border: 1px solid #e5e7eb; }
+        tfoot td { border: 1px solid #e5e7eb; }
         thead th.center { text-align: center; }
         tbody tr:nth-child(even) { background: #f9fafb; }
         tbody td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
