@@ -391,6 +391,7 @@ class MarkController extends Controller
     }
 
     private function grade(float $obtained, float $total): string
+    {
         $pct = ($obtained / $total) * 100;
         if ($pct >= 90) return 'A+';
         if ($pct >= 80) return 'A';
