@@ -121,9 +121,6 @@
                 {{-- Centre: Report Card title --}}
                 <div class="flex flex-col items-center justify-center text-center border-x border-gray-300 px-6 py-4">
                     <span class="text-2xl font-black uppercase tracking-widest text-gray-800 leading-tight">Report<br>Card</span>
-                    <div class="mt-1 text-xs text-gray-400 font-medium uppercase tracking-wide">
-                        {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
-                    </div>
                 </div>
 
                 {{-- Right: profile photo --}}

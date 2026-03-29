@@ -314,7 +314,6 @@
             {{-- Centre: Report Card title --}}
             <div class="student-title">
                 <div class="rc-heading">Report<br>Card</div>
-                <div class="rc-subtype">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
             </div>
             {{-- Right: photo --}}
             <div class="student-photo">
