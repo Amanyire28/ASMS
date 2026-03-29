@@ -9,7 +9,7 @@
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Marks Entry</h1>
-            <p class="text-sm text-gray-500 mt-1">Select a class, term and year to load the full mark sheet for all subjects.</p>
+            <p class="text-sm text-gray-500 mt-1">Select a class, term, year and exam type to enter or edit marks.</p>
         </div>
         <a href="{{ route('marks.index') }}"
            class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors">
@@ -35,12 +35,12 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
         <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
             <span class="w-7 h-7 rounded-full bg-maroon text-white text-xs flex items-center justify-center mr-2 font-bold">1</span>
-            Select Class, Term &amp; Year
+            Select Class, Term, Year &amp; Exam Type
         </h2>
 
         <form method="POST" action="{{ route('marks.entry') }}">
             @csrf
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {{-- Class --}}
                 <div>
@@ -91,6 +91,24 @@
                         <option value="{{ $y }}"
                             {{ (isset($selection['academic_year']) && $selection['academic_year'] == $y) ? 'selected' : '' }}>
                             {{ $y }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Exam Type --}}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Exam Type <span class="text-red-500">*</span>
+                    </label>
+                    <select name="exam_type_id" required
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
+                        <option value="">&mdash; Select Exam Type &mdash;</option>
+                        @foreach($examTypes as $et)
+                        <option value="{{ $et['id'] }}"
+                            {{ (isset($selection['exam_type_id']) && $selection['exam_type_id'] == $et['id']) ? 'selected' : '' }}>
+                            {{ $et['label'] }} (max {{ $et['max_marks'] }})
                         </option>
                         @endforeach
                     </select>
@@ -173,8 +191,8 @@
     </script>
 
     @php
-        $examTypeIds = array_column($examTypes, 'id');
-        $showTotal   = count($examTypes) > 1;
+        $etId      = $selectedExamType['id'];
+        $showTotal = false;
     @endphp
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
@@ -186,10 +204,14 @@
                 &middot; {{ $selection['term'] }}
                 &middot; {{ $selection['academic_year'] }}
             </span>
+            <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                {{ $selectedExamType['label'] }}
+            </span>
         </h2>
         <p class="text-sm text-gray-500 mb-4 ml-9">
             {{ $students->count() }} student(s) &middot; {{ $classSubjects->count() }} subject(s) &middot;
-            {{ count($examTypes) }} exam type(s): <strong>{{ implode(', ', array_column($examTypes, 'label')) }}</strong>.
+            Exam Type: <strong>{{ $selectedExamType['label'] }}</strong>
+            (max {{ $selectedExamType['max_marks'] }} marks per subject).
             Adjust <em>Out Of</em> per column if needed.
         </p>
 
@@ -215,56 +237,33 @@
             <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
                 <table class="border-separate border-spacing-0 text-sm" style="min-width:max-content;">
                     <thead>
-                        {{-- Row 1: subject group spans --}}
                         <tr>
-                            <th rowspan="2"
-                                class="sticky left-0 z-30 bg-gray-50 dark:bg-gray-800
+                            <th class="sticky left-0 z-30 bg-gray-50 dark:bg-gray-800
                                        py-3 px-2 w-10 text-center text-xs font-semibold text-gray-500 uppercase
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">#</th>
-                            <th rowspan="2"
-                                class="sticky left-10 z-30 bg-gray-50 dark:bg-gray-800
-                                       py-3 px-3 text-left text-xs font-semibold text-gray-500 uppercase w-36
+                            <th class="sticky left-10 z-30 bg-gray-50 dark:bg-gray-800
+                                       py-3 px-3 text-left text-xs font-semibold text-gray-500 uppercase w-44
                                        border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
                             @foreach($classSubjects as $subject)
-                            <th colspan="{{ count($examTypes) + ($showTotal ? 1 : 0) }}"
-                                class="bg-gray-50 dark:bg-gray-800 py-2 px-1 text-center
-                                       border-b border-r border-gray-200 dark:border-gray-700">
+                            <th class="bg-gray-50 dark:bg-gray-800 py-2 px-1 text-center min-w-[110px]
+                                       border-b-2 border-r border-gray-200 dark:border-gray-700">
                                 <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap"
                                      title="{{ $subject->name }}">{{ $subject->name }}</div>
                                 @if($subject->code)
                                 <div class="text-xs text-gray-400 font-normal">{{ $subject->code }}</div>
                                 @endif
-                            </th>
-                            @endforeach
-                        </tr>
-                        {{-- Row 2: exam-type sub-column headers with editable "Out Of" --}}
-                        <tr>
-                            @foreach($classSubjects as $subject)
-                            @foreach($examTypes as $et)
-                            <th class="bg-gray-50 dark:bg-gray-800 py-2 px-1 text-center min-w-[80px]
-                                       border-b-2 border-r border-gray-200 dark:border-gray-700">
-                                <div class="text-xs font-semibold text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
-                                    {{ $et['label'] }}
-                                </div>
                                 <div class="mt-1 flex items-center justify-center gap-0.5">
                                     <span class="text-xs text-gray-400">/</span>
                                     <input type="number"
-                                        name="total[{{ $subject->id }}][{{ $et['id'] }}]"
+                                        name="total[{{ $subject->id }}][{{ $etId }}]"
                                         x-data
-                                        x-model.number="$store.marksTotals.totals['{{ $subject->id }}']['{{ $et['id'] }}']"
+                                        x-model.number="$store.marksTotals.totals['{{ $subject->id }}']['{{ $etId }}']"
                                         min="1" max="1000" step="0.5"
-                                        class="w-12 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
+                                        class="w-14 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
                                                text-xs text-center focus:ring-1 focus:ring-maroon focus:border-maroon
                                                dark:bg-gray-700 dark:text-white font-normal">
                                 </div>
                             </th>
-                            @endforeach
-                            @if($showTotal)
-                            <th class="bg-gray-100 dark:bg-gray-700/60 py-2 px-1 text-center min-w-[80px]
-                                       border-b-2 border-r border-gray-200 dark:border-gray-700">
-                                <div class="text-xs font-semibold text-gray-600 dark:text-gray-300">Total</div>
-                            </th>
-                            @endif
                             @endforeach
                         </tr>
                     </thead>
@@ -297,32 +296,20 @@
                                     </div>
                                 </div>
                             </td>
-                            {{-- One input per subject × exam type --}}
+                            {{-- One input per subject for the selected exam type --}}
                             @foreach($classSubjects as $subject)
-                            @foreach($examTypes as $et)
                             <td class="py-2 px-1 text-center border-b border-r border-gray-200 dark:border-gray-700">
                                 <input type="number"
-                                    name="marks[{{ $student->id }}][{{ $subject->id }}][{{ $et['id'] }}]"
-                                    x-model="vals['{{ $subject->id }}']['{{ $et['id'] }}']"
-                                    min="0" step="0.5" placeholder="—"
-                                    class="w-16 border border-gray-300 dark:border-gray-600 rounded px-1 py-1
+                                    name="marks[{{ $student->id }}][{{ $subject->id }}][{{ $etId }}]"
+                                    x-model="vals['{{ $subject->id }}']['{{ $etId }}']"
+                                    min="0" step="0.5" placeholder="&mdash;"
+                                    class="w-20 border border-gray-300 dark:border-gray-600 rounded px-1 py-1
                                            text-sm text-center focus:ring-2 focus:ring-maroon focus:border-maroon
                                            dark:bg-gray-700 dark:text-white">
                                 <div class="text-xs font-semibold mt-0.5 h-4 leading-none whitespace-nowrap"
-                                     :class="cellGradeClass('{{ $subject->id }}', '{{ $et['id'] }}')"
-                                     x-text="cellGrade('{{ $subject->id }}', '{{ $et['id'] }}')">&mdash;</div>
+                                     :class="cellGradeClass('{{ $subject->id }}', '{{ $etId }}')"
+                                     x-text="cellGrade('{{ $subject->id }}', '{{ $etId }}')">&mdash;</div>
                             </td>
-                            @endforeach
-                            {{-- Subject total column (only when multiple exam types) --}}
-                            @if($showTotal)
-                            <td class="py-2 px-2 text-center border-b border-r border-gray-200 dark:border-gray-700
-                                       bg-gray-50/60 dark:bg-gray-700/30">
-                                <span class="text-xs font-semibold text-gray-700 dark:text-gray-200"
-                                      x-text="(function(t){return t?t.s+' / '+t.m:'\u2014'})(subjTotal('{{ $subject->id }}', {{ Js::from($examTypeIds) }}))">—</span>
-                                <div class="text-xs text-gray-500 leading-tight"
-                                     x-text="(function(t){return t?t.p+'% \xb7 '+t.g:''})(subjTotal('{{ $subject->id }}', {{ Js::from($examTypeIds) }}))"></div>
-                            </td>
-                            @endif
                             @endforeach
                         </tr>
                         @endforeach

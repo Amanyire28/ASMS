@@ -87,10 +87,11 @@ class MarkController extends Controller
             ? $this->teacherClasses($teacher)
             : ClassModel::where('is_active', true)->orderBy('name')->get();
 
-        $terms = ['Term 1', 'Term 2', 'Term 3'];
-        $years = $this->academicYears();
+        $terms     = ['Term 1', 'Term 2', 'Term 3'];
+        $years     = $this->academicYears();
+        $examTypes = $this->getExamTypes();
 
-        return view('modules.marks.entry', compact('classes', 'terms', 'years'));
+        return view('modules.marks.entry', compact('classes', 'terms', 'years', 'examTypes'));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -122,11 +123,18 @@ class MarkController extends Controller
             'class_id'      => 'required|exists:classes,id',
             'term'          => 'required|string',
             'academic_year' => 'required|string',
+            'exam_type_id'  => 'required|string',
         ]);
 
         $teacher   = $this->currentTeacher();
         $class     = ClassModel::findOrFail($request->class_id);
-        $examTypes = $this->getExamTypes();
+        $examTypes = $this->getExamTypes();   // full list — for the Step 1 selector
+
+        // Resolve the selected exam type
+        $selectedExamType = collect($examTypes)->firstWhere('id', $request->exam_type_id);
+        if (!$selectedExamType) {
+            return back()->withErrors(['exam_type_id' => 'Invalid exam type selected.'])->withInput();
+        }
 
         // Load subjects for columns — teacher-scoped when applicable
         $classSubjectsQuery = $class->subjects()
@@ -143,48 +151,45 @@ class MarkController extends Controller
 
         $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
 
-        // All marks for this class/term/year → 3-D map [student_id][subject_id][exam_type] = Mark
+        // Marks for this class/term/year/exam_type only
         $flat = Mark::where([
             'class_id'      => $request->class_id,
             'term'          => $request->term,
             'academic_year' => $request->academic_year,
+            'exam_type'     => $selectedExamType['id'],
         ])->whereIn('subject_id', $classSubjects->pluck('id'))->get();
 
         $existingMarks = [];
         foreach ($flat as $m) {
-            $existingMarks[$m->student_id][$m->subject_id][$m->exam_type] = $m;
+            $existingMarks[$m->student_id][$m->subject_id] = $m;
         }
 
-        // initTotals[subject_id][exam_type_id] — start at setting's max_marks, override with saved value
+        // initTotals[subject_id][exam_type_id] — default from config, overridden by saved value
+        $etId       = $selectedExamType['id'];
         $initTotals = [];
         foreach ($classSubjects as $s) {
-            $initTotals[(string) $s->id] = [];
-            foreach ($examTypes as $et) {
-                $saved = $existingMarks['*'][$s->id][$et['id']] ?? null; // won't exist
-                $initTotals[(string) $s->id][$et['id']] = (float) $et['max_marks'];
-            }
-            // Override with any saved total_marks for each exam type
-            foreach ($flat->where('subject_id', $s->id) as $m) {
-                if (isset($initTotals[(string) $s->id][$m->exam_type])) {
-                    $initTotals[(string) $s->id][$m->exam_type] = (float) $m->total_marks;
-                }
+            $initTotals[(string) $s->id] = [
+                $etId => (float) $selectedExamType['max_marks'],
+            ];
+            $saved = $flat->firstWhere('subject_id', $s->id);
+            if ($saved) {
+                $initTotals[(string) $s->id][$etId] = (float) $saved->total_marks;
             }
         }
 
-        // initialVals[student_id][subject_id][exam_type_id] = obtained string ('' if empty)
+        // initialVals[student_id][subject_id][exam_type_id] = obtained string
         $initialVals = [];
         foreach ($students as $student) {
             $initialVals[$student->id] = [];
             foreach ($classSubjects as $s) {
-                $initialVals[$student->id][$s->id] = [];
-                foreach ($examTypes as $et) {
-                    $m = $existingMarks[$student->id][$s->id][$et['id']] ?? null;
-                    $initialVals[$student->id][$s->id][$et['id']] = $m ? (string) $m->marks_obtained : '';
-                }
+                $m = $existingMarks[$student->id][$s->id] ?? null;
+                $initialVals[$student->id][$s->id] = [
+                    $etId => $m ? (string) $m->marks_obtained : '',
+                ];
             }
         }
 
-        $selection = $request->only(['class_id', 'term', 'academic_year']);
+        $selection = $request->only(['class_id', 'term', 'academic_year', 'exam_type_id']);
 
         $classes = $teacher
             ? $this->teacherClasses($teacher)
@@ -194,7 +199,7 @@ class MarkController extends Controller
         $years = $this->academicYears();
 
         return view('modules.marks.entry', compact(
-            'class', 'classSubjects', 'students', 'examTypes',
+            'class', 'classSubjects', 'students', 'examTypes', 'selectedExamType',
             'existingMarks', 'initTotals', 'initialVals', 'selection',
             'classes', 'terms', 'years'
         ));
