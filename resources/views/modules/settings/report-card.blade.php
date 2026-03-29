@@ -301,20 +301,7 @@
                 <p class="mt-1 text-xs text-gray-400">Appears at the bottom of each generated report. Max 500 characters.</p>
             </div>
 
-            {{-- Grade Scale Reference --}}
-            <div class="bg-gray-50 rounded-lg border border-gray-200 px-4 py-4">
-                <h3 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">
-                    <i class="fas fa-info-circle mr-1"></i> Grade Scale (System Default)
-                </h3>
-                <div class="grid grid-cols-4 md:grid-cols-8 gap-2">
-                    @foreach(['A+' => '≥90%', 'A' => '≥80%', 'B+' => '≥70%', 'B' => '≥60%', 'C+' => '≥50%', 'C' => '≥40%', 'D' => '≥30%', 'F' => '<30%'] as $grade => $range)
-                    <div class="text-center bg-white rounded border border-gray-200 py-2 px-1">
-                        <div class="font-bold text-blue-700 text-sm">{{ $grade }}</div>
-                        <div class="text-xs text-gray-500">{{ $range }}</div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
+            {{-- (Removed hardcoded default grade scale; admin-configurable thresholds shown below) --}}
 
             {{-- Admin-configurable grade thresholds --}}
             <div class="bg-white rounded-lg border border-gray-200 p-4">
