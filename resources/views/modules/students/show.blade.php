@@ -128,7 +128,7 @@
             </dl>
         </div>
 
-        <!-- Academic Marks -->
+        <!-- Academic Records -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide mb-4 flex items-center">
                 <i class="fas fa-chart-bar mr-2 text-maroon"></i>Academic Records
@@ -137,69 +137,130 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">No marks recorded yet.</p>
             @else
                 @php
-                    $marksByTerm = $student->marks->groupBy(fn($m) => $m->academic_year . ' — Term ' . $m->term);
+                    $marksByPeriod = $student->marks
+                        ->sortByDesc(fn($m) => $m->academic_year . '-' . $m->term)
+                        ->groupBy(fn($m) => $m->academic_year . ' &middot; ' . $m->term);
                 @endphp
-                @foreach($marksByTerm as $termLabel => $termMarks)
-                <div class="mb-5 last:mb-0">
-                    <p class="text-xs font-semibold text-maroon uppercase tracking-wider mb-2">{{ $termLabel }}</p>
+                @foreach($marksByPeriod as $periodLabel => $periodMarks)
+                @php
+                    $markMap = [];
+                    $periodSubjects = collect();
+                    foreach ($periodMarks as $m) {
+                        $markMap[$m->subject_id][$m->exam_type] = $m;
+                        if ($m->subject && !$periodSubjects->contains('id', $m->subject_id)) {
+                            $periodSubjects->push($m->subject);
+                        }
+                    }
+                    $periodSubjects = $periodSubjects->sortBy('name');
+                @endphp
+                <div class="mb-6 last:mb-0">
+                    <p class="text-xs font-semibold text-maroon uppercase tracking-wider mb-3">{!! $periodLabel !!}</p>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
+                        <table class="w-full text-sm border-separate border-spacing-0">
                             <thead>
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <th class="text-left py-2 pr-4 text-gray-500 dark:text-gray-400 font-medium">Subject</th>
-                                    <th class="text-center py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">Obtained</th>
-                                    <th class="text-center py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">Out Of</th>
-                                    <th class="text-center py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">%</th>
-                                    <th class="text-center py-2 pl-2 text-gray-500 dark:text-gray-400 font-medium">Grade</th>
+                                <tr>
+                                    <th class="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase
+                                               bg-gray-50 dark:bg-gray-900 border-b-2 border-r
+                                               border-gray-200 dark:border-gray-700 min-w-[120px]">Subject</th>
+                                    @foreach($examTypes as $et)
+                                    <th class="py-2 px-2 text-center text-xs font-semibold text-indigo-600 dark:text-indigo-400
+                                               bg-gray-50 dark:bg-gray-900 border-b-2 border-r
+                                               border-gray-200 dark:border-gray-700 min-w-[80px] whitespace-nowrap">
+                                        {{ $et['label'] }}
+                                    </th>
+                                    @endforeach
+                                    <th class="py-2 px-2 text-center text-xs font-semibold text-gray-500 uppercase
+                                               bg-gray-50 dark:bg-gray-900 border-b-2
+                                               border-gray-200 dark:border-gray-700 min-w-[80px]">Total</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                @foreach($termMarks as $mark)
-                                @php
-                                    $pct = $mark->total_marks > 0 ? round(($mark->marks_obtained / $mark->total_marks) * 100) : 0;
-                                    $grade = $pct >= 80 ? 'A' : ($pct >= 65 ? 'B' : ($pct >= 50 ? 'C' : ($pct >= 40 ? 'D' : 'F')));
-                                    $gradeColor = match($grade) {
-                                        'A' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                        'B' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                        'C' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                        'D' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                        default => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                    };
-                                @endphp
-                                <tr>
-                                    <td class="py-2 pr-4 text-gray-900 dark:text-white">{{ $mark->subject->name ?? '—' }}</td>
-                                    <td class="py-2 px-2 text-center text-gray-700 dark:text-gray-300">{{ $mark->marks_obtained }}</td>
-                                    <td class="py-2 px-2 text-center text-gray-500 dark:text-gray-400">{{ $mark->total_marks }}</td>
-                                    <td class="py-2 px-2 text-center text-gray-700 dark:text-gray-300">{{ $pct }}%</td>
-                                    <td class="py-2 pl-2 text-center">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $gradeColor }}">{{ $grade }}</span>
+                            <tbody>
+                                @foreach($periodSubjects as $subj)
+                                @php $subObt = 0; $subMax = 0; $hasAny = false; @endphp
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                                    <td class="py-2 px-3 text-gray-900 dark:text-white font-medium border-b border-r
+                                               border-gray-200 dark:border-gray-700">{{ $subj->name }}</td>
+                                    @foreach($examTypes as $et)
+                                    @php
+                                        $m = $markMap[$subj->id][$et['id']] ?? null;
+                                        if ($m !== null) {
+                                            $subObt += (float) $m->marks_obtained;
+                                            $subMax += (float) $m->total_marks;
+                                            $hasAny = true;
+                                        }
+                                    @endphp
+                                    <td class="py-2 px-2 text-center border-b border-r border-gray-200 dark:border-gray-700">
+                                        @if($m !== null)
+                                        @php $etPct = $m->total_marks > 0 ? round(($m->marks_obtained / $m->total_marks) * 100) : 0; @endphp
+                                        <div class="text-xs font-semibold text-gray-900 dark:text-white">
+                                            {{ $m->marks_obtained }}<span class="text-gray-400 font-normal">/{{ $m->total_marks }}</span>
+                                        </div>
+                                        <div class="text-xs {{ $etPct>=70?'text-green-600':($etPct>=50?'text-blue-500':($etPct>=40?'text-yellow-500':($etPct>=30?'text-orange-500':'text-red-500'))) }}">
+                                            {{ $etPct }}%
+                                        </div>
+                                        @else
+                                        <span class="text-gray-300 dark:text-gray-600 text-xs">&mdash;</span>
+                                        @endif
+                                    </td>
+                                    @endforeach
+                                    <td class="py-2 px-2 text-center border-b border-gray-200 dark:border-gray-700">
+                                        @if($hasAny && $subMax > 0)
+                                        @php $totPct = round($subObt / $subMax * 100); @endphp
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {{ $subObt }}<span class="text-xs text-gray-400 font-normal">/{{ $subMax }}</span>
+                                        </div>
+                                        <div class="text-xs font-semibold {{ $totPct>=70?'text-green-600':($totPct>=50?'text-blue-500':($totPct>=40?'text-yellow-500':($totPct>=30?'text-orange-500':'text-red-500'))) }}">
+                                            {{ $totPct }}%
+                                        </div>
+                                        @else
+                                        <span class="text-gray-300 dark:text-gray-600 text-xs">&mdash;</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             @php
-                                $totalObtained = $termMarks->sum('marks_obtained');
-                                $totalPossible = $termMarks->sum('total_marks');
-                                $avgPct = $totalPossible > 0 ? round(($totalObtained / $totalPossible) * 100) : 0;
-                                $finalGrade = $avgPct >= 80 ? 'A' : ($avgPct >= 65 ? 'B' : ($avgPct >= 50 ? 'C' : ($avgPct >= 40 ? 'D' : 'F')));
+                                $grandObt = 0; $grandMax = 0;
+                                foreach ($periodSubjects as $subj) {
+                                    foreach ($examTypes as $et) {
+                                        $gm = $markMap[$subj->id][$et['id']] ?? null;
+                                        if ($gm) { $grandObt += (float) $gm->marks_obtained; $grandMax += (float) $gm->total_marks; }
+                                    }
+                                }
+                                $grandPct = $grandMax > 0 ? round($grandObt / $grandMax * 100) : 0;
                             @endphp
                             <tfoot>
                                 <tr class="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
-                                    <td class="py-2 pr-4 text-gray-900 dark:text-white">Total</td>
-                                    <td class="py-2 px-2 text-center text-gray-900 dark:text-white">{{ $totalObtained }}</td>
-                                    <td class="py-2 px-2 text-center text-gray-900 dark:text-white">{{ $totalPossible }}</td>
-                                    <td class="py-2 px-2 text-center text-gray-900 dark:text-white">{{ $avgPct }}%</td>
-                                    <td class="py-2 pl-2 text-center">
-                                        @php
-                                            $finalColor = match($finalGrade) {
-                                                'A' => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                                                'B' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                                                'C' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                                'D' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                                default => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $finalColor }}">{{ $finalGrade }}</span>
+                                    <td class="py-2 px-3 text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                                        Overall
+                                    </td>
+                                    @foreach($examTypes as $et)
+                                    @php
+                                        $etObt = 0; $etMax = 0;
+                                        foreach ($periodSubjects as $subj) {
+                                            $em = $markMap[$subj->id][$et['id']] ?? null;
+                                            if ($em) { $etObt += (float) $em->marks_obtained; $etMax += (float) $em->total_marks; }
+                                        }
+                                    @endphp
+                                    <td class="py-2 px-2 text-center border-r border-gray-200 dark:border-gray-700">
+                                        @if($etMax > 0)
+                                        <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ $etObt }}/{{ $etMax }}</div>
+                                        @else
+                                        <span class="text-gray-300 dark:text-gray-600 text-xs">&mdash;</span>
+                                        @endif
+                                    </td>
+                                    @endforeach
+                                    <td class="py-2 px-2 text-center">
+                                        @if($grandMax > 0)
+                                        <div class="font-bold text-sm text-gray-900 dark:text-white">
+                                            {{ $grandObt }}<span class="text-xs text-gray-400 font-normal">/{{ $grandMax }}</span>
+                                        </div>
+                                        <div class="text-xs font-bold {{ $grandPct>=70?'text-green-600':($grandPct>=50?'text-blue-500':($grandPct>=40?'text-yellow-500':($grandPct>=30?'text-orange-500':'text-red-500'))) }}">
+                                            {{ $grandPct }}%
+                                        </div>
+                                        @else
+                                        <span class="text-gray-300 dark:text-gray-600">&mdash;</span>
+                                        @endif
                                     </td>
                                 </tr>
                             </tfoot>

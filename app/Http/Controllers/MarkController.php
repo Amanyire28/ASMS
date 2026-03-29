@@ -79,19 +79,24 @@ class MarkController extends Controller
     // ──────────────────────────────────────────────────────────
     //  CREATE — Step 1 selector form
     // ──────────────────────────────────────────────────────────
-    public function create()
+    public function create(Request $request)
     {
         $teacher = $this->currentTeacher();
 
-        $classes = $teacher
+        $classes         = $teacher
             ? $this->teacherClasses($teacher)
             : ClassModel::where('is_active', true)->orderBy('name')->get();
+        $terms           = ['Term 1', 'Term 2', 'Term 3'];
+        $years           = $this->academicYears();
+        $examTypes       = $this->getExamTypes();
+        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
 
-        $terms     = ['Term 1', 'Term 2', 'Term 3'];
-        $years     = $this->academicYears();
-        $examTypes = $this->getExamTypes();
+        // GET-based load — for "Next / Prev Subject" redirect after save
+        if ($request->filled(['class_id', 'term', 'academic_year', 'exam_type_id', 'subject_id'])) {
+            return $this->renderSubjectEntry($request, $classes, $terms, $years, $examTypes, $subjectsByClass);
+        }
 
-        return view('modules.marks.entry', compact('classes', 'terms', 'years', 'examTypes'));
+        return view('modules.marks.entry', compact('classes', 'terms', 'years', 'examTypes', 'subjectsByClass'));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -115,7 +120,7 @@ class MarkController extends Controller
     }
 
     // ──────────────────────────────────────────────────────────
-    //  ENTRY — Step 2: load student grid with existing marks
+    //  ENTRY — Step 2: load student list for one subject
     // ──────────────────────────────────────────────────────────
     public function entry(Request $request)
     {
@@ -124,85 +129,19 @@ class MarkController extends Controller
             'term'          => 'required|string',
             'academic_year' => 'required|string',
             'exam_type_id'  => 'required|string',
+            'subject_id'    => 'required|exists:subjects,id',
         ]);
 
-        $teacher   = $this->currentTeacher();
-        $class     = ClassModel::findOrFail($request->class_id);
-        $examTypes = $this->getExamTypes();   // full list — for the Step 1 selector
-
-        // Resolve the selected exam type
-        $selectedExamType = collect($examTypes)->firstWhere('id', $request->exam_type_id);
-        if (!$selectedExamType) {
-            return back()->withErrors(['exam_type_id' => 'Invalid exam type selected.'])->withInput();
-        }
-
-        // Load subjects for columns — teacher-scoped when applicable
-        $classSubjectsQuery = $class->subjects()
-            ->where('subjects.is_active', true)
-            ->orderBy('subjects.name');
-        if ($teacher) {
-            $classSubjectsQuery->where('class_subject.teacher_id', $teacher->id);
-        }
-        $classSubjects = $classSubjectsQuery->get();
-
-        if ($teacher && $classSubjects->isEmpty()) {
-            abort(403, 'You are not assigned to teach any subjects in this class.');
-        }
-
-        $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
-
-        // Marks for this class/term/year/exam_type only
-        $flat = Mark::where([
-            'class_id'      => $request->class_id,
-            'term'          => $request->term,
-            'academic_year' => $request->academic_year,
-            'exam_type'     => $selectedExamType['id'],
-        ])->whereIn('subject_id', $classSubjects->pluck('id'))->get();
-
-        $existingMarks = [];
-        foreach ($flat as $m) {
-            $existingMarks[$m->student_id][$m->subject_id] = $m;
-        }
-
-        // initTotals[subject_id][exam_type_id] — default from config, overridden by saved value
-        $etId       = $selectedExamType['id'];
-        $initTotals = [];
-        foreach ($classSubjects as $s) {
-            $initTotals[(string) $s->id] = [
-                $etId => (float) $selectedExamType['max_marks'],
-            ];
-            $saved = $flat->firstWhere('subject_id', $s->id);
-            if ($saved) {
-                $initTotals[(string) $s->id][$etId] = (float) $saved->total_marks;
-            }
-        }
-
-        // initialVals[student_id][subject_id][exam_type_id] = obtained string
-        $initialVals = [];
-        foreach ($students as $student) {
-            $initialVals[$student->id] = [];
-            foreach ($classSubjects as $s) {
-                $m = $existingMarks[$student->id][$s->id] ?? null;
-                $initialVals[$student->id][$s->id] = [
-                    $etId => $m ? (string) $m->marks_obtained : '',
-                ];
-            }
-        }
-
-        $selection = $request->only(['class_id', 'term', 'academic_year', 'exam_type_id']);
-
-        $classes = $teacher
+        $teacher         = $this->currentTeacher();
+        $classes         = $teacher
             ? $this->teacherClasses($teacher)
             : ClassModel::where('is_active', true)->orderBy('name')->get();
+        $terms           = ['Term 1', 'Term 2', 'Term 3'];
+        $years           = $this->academicYears();
+        $examTypes       = $this->getExamTypes();
+        $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
 
-        $terms = ['Term 1', 'Term 2', 'Term 3'];
-        $years = $this->academicYears();
-
-        return view('modules.marks.entry', compact(
-            'class', 'classSubjects', 'students', 'examTypes', 'selectedExamType',
-            'existingMarks', 'initTotals', 'initialVals', 'selection',
-            'classes', 'terms', 'years'
-        ));
+        return $this->renderSubjectEntry($request, $classes, $terms, $years, $examTypes, $subjectsByClass);
     }
 
     // ──────────────────────────────────────────────────────────
@@ -258,6 +197,16 @@ class MarkController extends Controller
             }
         }
 
+        $nextSubjectId = $request->input('next_subject_id');
+        if ($nextSubjectId) {
+            return redirect()->route('marks.entry.form', array_filter([
+                'class_id'      => $request->class_id,
+                'term'          => $request->term,
+                'academic_year' => $request->academic_year,
+                'exam_type_id'  => $request->input('exam_type_id'),
+                'subject_id'    => $nextSubjectId,
+            ]))->with('success', 'Marks saved. Loading next subject…');
+        }
         return redirect()->route('marks.index')->with('success', 'Marks saved successfully.');
     }
 
@@ -383,6 +332,89 @@ class MarkController extends Controller
             ->where('subject_id', $subjectId)
             ->where('teacher_id', $teacher->id)
             ->exists();
+    }
+
+    /**
+     * Load the per-subject mark entry view — shared by GET (prev/next) and POST (form submit).
+     */
+    private function renderSubjectEntry(
+        Request $request,
+        $classes,
+        array $terms,
+        array $years,
+        array $examTypes,
+        array $subjectsByClass
+    ) {
+        $teacher = $this->currentTeacher();
+        $class   = ClassModel::findOrFail($request->class_id);
+
+        $selectedExamType = collect($examTypes)->firstWhere('id', $request->exam_type_id);
+        if (!$selectedExamType) {
+            return back()->withErrors(['exam_type_id' => 'Invalid exam type selected.'])->withInput();
+        }
+
+        // All subjects for this class (teacher-scoped), ordered alphabetically
+        $allSubjectsQuery = $class->subjects()
+            ->where('subjects.is_active', true)
+            ->orderBy('subjects.name');
+        if ($teacher) {
+            $allSubjectsQuery->where('class_subject.teacher_id', $teacher->id);
+        }
+        $allSubjects = $allSubjectsQuery->get();
+
+        if ($teacher && $allSubjects->isEmpty()) {
+            abort(403, 'You are not assigned to teach any subjects in this class.');
+        }
+
+        $subject = $allSubjects->firstWhere('id', (int) $request->subject_id);
+        if (!$subject) {
+            return back()->withErrors(['subject_id' => 'Subject not found in this class.'])->withInput();
+        }
+
+        // Prev / Next navigation
+        $subjectIds   = $allSubjects->pluck('id')->values();
+        $currentIndex = $subjectIds->search($subject->id);
+        $prevSubject  = $currentIndex > 0 ? $allSubjects[$currentIndex - 1] : null;
+        $nextSubject  = $currentIndex < $allSubjects->count() - 1 ? $allSubjects[$currentIndex + 1] : null;
+
+        $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
+        $etId     = $selectedExamType['id'];
+
+        // Marks for this exact class/term/year/exam_type/subject
+        $flat = Mark::where([
+            'class_id'      => $request->class_id,
+            'term'          => $request->term,
+            'academic_year' => $request->academic_year,
+            'exam_type'     => $etId,
+            'subject_id'    => $subject->id,
+        ])->get();
+
+        $existingMarks = $flat->keyBy('student_id');
+
+        // initTotals[subject_id][etId] — use saved total if present, else config default
+        $savedFirst = $flat->first();
+        $initTotVal = $savedFirst ? (float) $savedFirst->total_marks : (float) $selectedExamType['max_marks'];
+        $initTotals = [(string) $subject->id => [$etId => $initTotVal]];
+
+        // initialVals[student_id][(string)subject_id][$etId]
+        $initialVals = [];
+        foreach ($students as $stu) {
+            $m = $existingMarks[$stu->id] ?? null;
+            $initialVals[$stu->id] = [
+                (string) $subject->id => [
+                    $etId => $m !== null ? (string) $m->marks_obtained : '',
+                ],
+            ];
+        }
+
+        $selection = $request->only(['class_id', 'term', 'academic_year', 'exam_type_id', 'subject_id']);
+
+        return view('modules.marks.entry', compact(
+            'class', 'subject', 'allSubjects', 'prevSubject', 'nextSubject',
+            'students', 'examTypes', 'selectedExamType',
+            'existingMarks', 'initTotals', 'initialVals', 'selection',
+            'classes', 'terms', 'years', 'subjectsByClass'
+        ));
     }
 
     /** Return configured exam types; falls back to single 'Final' type for legacy behaviour. */

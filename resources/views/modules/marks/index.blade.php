@@ -140,39 +140,46 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th class="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-2
+                        <th rowspan="2" class="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-2
                                    text-center text-xs font-semibold text-gray-500 uppercase
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">#</th>
-                        <th class="sticky left-8 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-3
+                        <th rowspan="2" class="sticky left-8 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-3
                                    text-left text-xs font-semibold text-gray-500 uppercase
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
                         @foreach($classSubjects as $subject)
-                        <th class="bg-gray-50 dark:bg-gray-900 py-2 px-1 text-center
-                                   border-b-2 border-r border-gray-200 dark:border-gray-700">
-                            <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate leading-tight"
+                        <th colspan="{{ count($examTypes) }}"
+                            class="bg-gray-50 dark:bg-gray-900 py-2 px-1 text-center
+                                   border-b border-r border-gray-200 dark:border-gray-700">
+                            <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap"
                                  title="{{ $subject->name }}">{{ $subject->name }}</div>
                             @if($subject->code)
-                            <div class="text-xs text-gray-400 font-normal truncate">{{ $subject->code }}</div>
-                            @endif
-                            @if(count($examTypes) > 1)
-                            <div class="text-xs text-gray-400 font-normal leading-tight">
-                                {{ implode('+', array_column($examTypes, 'label')) }}
-                            </div>
+                            <div class="text-xs text-gray-400 font-normal">{{ $subject->code }}</div>
                             @endif
                         </th>
                         @endforeach
-                        <th class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
+                        <th rowspan="2" class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
                                    text-gray-500 uppercase border-b-2 border-r border-gray-200 dark:border-gray-700">
                             Total
                         </th>
-                        <th class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
+                        <th rowspan="2" class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
                                    text-gray-500 uppercase border-b-2 border-r border-gray-200 dark:border-gray-700">
                             Avg&nbsp;%
                         </th>
-                        <th class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
+                        <th rowspan="2" class="bg-gray-50 dark:bg-gray-900 py-3 px-2 text-center text-xs font-semibold
                                    text-gray-500 uppercase border-b-2 border-gray-200 dark:border-gray-700">
                             Grade
                         </th>
+                    </tr>
+                    <tr>
+                        @foreach($classSubjects as $subject)
+                        @foreach($examTypes as $et)
+                        <th class="bg-gray-50 dark:bg-gray-900 py-2 px-1 text-center min-w-[75px]
+                                   border-b-2 border-r border-gray-200 dark:border-gray-700
+                                   text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                            {{ $et['label'] }}
+                        </th>
+                        @endforeach
+                        @endforeach
                     </tr>
                 </thead>
                 <tbody>
@@ -217,38 +224,22 @@
                                 </div>
                             </div>
                         </td>
-                        {{-- One aggregated cell per subject --}}
+                        {{-- Per-exam-type cells for each subject --}}
                         @foreach($classSubjects as $subject)
-                        @php
-                            $agg = $marksAgg[$student->id][$subject->id] ?? null;
-                            $subGrade = null;
-                            if ($agg && $agg['total'] > 0) {
-                                $subGrade = $gradeScale(($agg['obtained'] / $agg['total']) * 100);
-                            }
-                        @endphp
-                        <td class="py-2 px-1 text-center border-b border-r border-gray-200 dark:border-gray-700">
-                            @if($agg)
-                            <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">
-                                {{ $agg['obtained'] }}
-                                @if(count($examTypes) > 1)
-                                <span class="text-xs font-normal text-gray-400">/ {{ $agg['total'] }}</span>
-                                @endif
+                        @foreach($examTypes as $et)
+                        @php $m = $marksGrid[$student->id][$subject->id][$et['id']] ?? null; @endphp
+                        <td class="py-2 px-1 text-center border-b border-r border-gray-200 dark:border-gray-700 min-w-[70px]">
+                            @if($m !== null)
+                            @php $etPct = $m->total_marks > 0 ? round(($m->marks_obtained / $m->total_marks) * 100) : 0; @endphp
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white leading-tight">
+                                {{ $m->marks_obtained }}<span class="text-gray-400 font-normal">/{{ $m->total_marks }}</span>
                             </div>
-                            @if($subGrade)
-                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ $subGrade }}</span>
-                            @endif
-                            @can('marks.entry')
-                            <a href="{{ route('marks.entry.form') }}?class_id={{ $selection['class_id'] }}&term={{ urlencode($selection['term']) }}&academic_year={{ urlencode($selection['academic_year']) }}"
-                               class="block text-center text-blue-400 hover:text-blue-600 leading-none mt-0.5"
-                               title="Edit in entry form">
-                                <i class="fas fa-pencil-alt" style="font-size:9px"></i>
-                            </a>
-                            @endcan
+                            <div class="text-xs font-medium text-gray-500">{{ $gradeScale($etPct) }}</div>
                             @else
-                            <span class="text-gray-300 dark:text-gray-600">&mdash;</span>
+                            <span class="text-gray-300 dark:text-gray-600 text-xs">&mdash;</span>
                             @endif
                         </td>
-
+                        @endforeach
                         @endforeach
                         {{-- Total obtained / total possible --}}
                         <td class="py-2 px-2 text-center border-b border-r border-gray-200 dark:border-gray-700">

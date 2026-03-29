@@ -82,7 +82,12 @@ class StudentController extends Controller
     {
         $student->load('class', 'marks.subject');
 
-        return view('modules.students.show', compact('student'));
+        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
+        if (empty($examTypes)) {
+            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
+        }
+
+        return view('modules.students.show', compact('student', 'examTypes'));
     }
 
     /**
