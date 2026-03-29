@@ -128,7 +128,9 @@
             <p>No active students in this class.</p>
         </div>
         @else
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto max-h-[70vh]">
+        <div id="marksheet-scroll"
+             class="rounded-lg border border-gray-200 dark:border-gray-700"
+             style="overflow-x:auto; overflow-y:auto; max-height:70vh; width:100%; cursor:grab;">
             <table class="border-separate border-spacing-0 text-sm" style="min-width:max-content;">
                 <colgroup>
                     <col class="w-8">
@@ -285,4 +287,43 @@
     @endisset
 
 </div>
+
+<script>
+(function () {
+    function initDrag(el) {
+        if (!el) return;
+        let isDown = false, startX, startY, scrollLeft, scrollTop;
+        el.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            isDown = true;
+            el.style.cursor = 'grabbing';
+            startX     = e.pageX - el.offsetLeft;
+            startY     = e.pageY - el.offsetTop;
+            scrollLeft = el.scrollLeft;
+            scrollTop  = el.scrollTop;
+            e.preventDefault();
+        });
+        document.addEventListener('mouseup',   function () { isDown = false; el.style.cursor = 'grab'; });
+        document.addEventListener('mousemove', function (e) {
+            if (!isDown) return;
+            const dx = (e.pageX - el.offsetLeft) - startX;
+            const dy = (e.pageY - el.offsetTop)  - startY;
+            el.scrollLeft = scrollLeft - dx;
+            el.scrollTop  = scrollTop  - dy;
+        });
+    }
+
+    // Run immediately if DOM already ready, otherwise wait
+    function bind() { initDrag(document.getElementById('marksheet-scroll')); }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+    } else {
+        bind();
+    }
+    // Also re-bind after HTMX swaps content into page-content
+    document.addEventListener('htmx:afterSwap', bind);
+})();
+</script>
+@if(!request()->header('HX-Request'))
 @endsection
+@endif
