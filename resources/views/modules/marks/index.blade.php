@@ -3,7 +3,7 @@
 @section('title', 'Marks')
 
 @section('content')
-<div class="px-4 py-6 max-w-full mx-auto">
+<div class="px-4 py-6 w-full min-w-0">
 
     {{-- Header --}}
     <div class="flex items-center justify-between mb-6">
@@ -98,7 +98,7 @@
         };
     @endphp
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
         <div class="flex items-start justify-between mb-4">
             <div>
                 <h2 class="text-base font-semibold text-gray-900 dark:text-white flex items-center flex-wrap gap-1">
@@ -128,7 +128,7 @@
             <p>No active students in this class.</p>
         </div>
         @else
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto max-h-[70vh]">
             <table class="border-separate border-spacing-0 text-sm" style="min-width:max-content;">
                 <colgroup>
                     <col class="w-8">
@@ -138,12 +138,12 @@
                     <col class="w-16">
                     <col class="w-16">
                 </colgroup>
-                <thead>
+                <thead class="sticky top-0 z-20">
                     <tr>
-                        <th rowspan="2" class="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-2
+                        <th rowspan="2" class="sticky left-0 z-40 bg-gray-50 dark:bg-gray-900 py-3 px-2
                                    text-center text-xs font-semibold text-gray-500 uppercase
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">#</th>
-                        <th rowspan="2" class="sticky left-8 z-20 bg-gray-50 dark:bg-gray-900 py-3 px-3
+                        <th rowspan="2" class="sticky left-8 z-40 bg-gray-50 dark:bg-gray-900 py-3 px-3
                                    text-left text-xs font-semibold text-gray-500 uppercase
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
                         @foreach($classSubjects as $subject)
