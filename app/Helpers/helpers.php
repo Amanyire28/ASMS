@@ -163,6 +163,7 @@ if (!function_exists('grade_info')) {
             'B' => 60,
             'C' => 50,
             'D' => 40,
+            'E' => 30,
         ];
 
         $thresholds = school_setting('grade_thresholds', $defaults);
@@ -187,6 +188,7 @@ if (!function_exists('grade_info')) {
             'B' => 'Outstanding',
             'C' => 'Very Good',
             'D' => 'Needs Improvement',
+            'E' => 'Satisfactory',
             'F' => 'Poor',
         ]);
 
@@ -195,6 +197,7 @@ if (!function_exists('grade_info')) {
             'B' => 'O',
             'C' => 'V',
             'D' => 'N',
+            'E' => 'S',
             'F' => 'P',
         ]);
 

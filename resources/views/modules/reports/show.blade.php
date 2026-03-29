@@ -1,18 +1,21 @@
 @if(!request()->header('HX-Request'))
 @extends('layouts.app')
 @section('title', 'Report Card - ' . $report->report_number)
-@section('content')
-@endif
-
-<div class="space-y-6">
-    {{-- Action Bar --}}
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('reports.index') }}"
-               hx-get="{{ route('reports.index') }}"
-               hx-target="#page-content"
-               hx-push-url="true"
-               class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                                @foreach($examTypes as $et)
+                                <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase leading-tight">
+                                    {{ $et['label'] }}<br>
+                                    <span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] }}</span>
+                                </th>
+                                @endforeach
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Average</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total/100</th>
+                                @if($showTotal)
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total</th>
+                                @endif
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Achievement</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Initial</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
@@ -23,11 +26,13 @@
         <div class="flex items-center gap-2">
             <a href="{{ route('reports.print', $report) }}" target="_blank"
                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                <i class="fas fa-print"></i> Print
-            </a>
-            <a href="{{ route('reports.print', $report) }}?download=1" target="_blank"
-               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                <i class="fas fa-download"></i> Download PDF
+                                $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
+                                if ($subPct !== null) {
+                                    $g = grade_info($subPct);
+                                    $subGrade = $g['grade'] ?? null;
+                                    $subAchievement = $g['achievement'] ?? null;
+                                    $subInitial = $g['initial'] ?? null;
+                                } else { $subGrade = $subAchievement = $subInitial = null; }
             </a>
             @canany('reports.delete')
             <form action="{{ route('reports.destroy', $report) }}" method="POST"
@@ -37,16 +42,15 @@
                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors">
                     <i class="fas fa-trash"></i> Delete
                 </button>
-            </form>
-            @endcanany
-        </div>
-    </div>
-
-    {{-- Flash --}}
-    @if(session('success'))
-    <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 flex items-center gap-2">
-        <i class="fas fa-check-circle text-green-500"></i>
-        {{ session('success') }}
+                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
+                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $subPct !== null ? round($subPct,1) . ' / 100' : '-' }}</td>
+                                @if($showTotal)
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}</td>
+                                @endif
+                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '-' }}</td>
+                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $subAchievement ?? '-' }}</td>
+                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $subInitial ?? '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '-' }}</td>
     </div>
     @endif
 
@@ -55,16 +59,18 @@
 
         {{-- School Header --}}
         <div class="px-6 pt-6 pb-4 text-center">
-            @php
+                                <td class="px-3 py-3 text-center text-gray-400">-</td>
                 $logoLeft  = school_setting('logo_left_text');
-                $logoRight = school_setting('logo_right_text');
-                if (!$logoLeft && !$logoRight) {
-                    $nameParts = explode(' ', school_setting('school_name', 'School Name'), 2);
-                    $logoLeft  = $nameParts[0];
-                    $logoRight = $nameParts[1] ?? '';
-                }
-            @endphp
-            {{-- Brand line: left text | Logo | right text --}}
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}%</td>
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ round($summary['average_percentage'],1) }} / 100</td>
+                                @if($showTotal)
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}</td>
+                                @endif
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['grade'] }}</td>
+                                @php $sumInfo = grade_info($summary['average_percentage']); @endphp
+                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $sumInfo['achievement'] ?? '-' }}</td>
+                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $sumInfo['initial'] ?? '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subject(s)</td>
             <div class="flex items-center justify-center gap-3">
                 <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ $logoLeft }}</h2>
                 <div class="shrink-0">

@@ -252,6 +252,11 @@ class SchoolSettingController extends Controller
             'grade_thresholds.B' => 'nullable|integer|min:0|max:100',
             'grade_thresholds.C' => 'nullable|integer|min:0|max:100',
             'grade_thresholds.D' => 'nullable|integer|min:0|max:100',
+            'grade_thresholds.E' => 'nullable|integer|min:0|max:100',
+            'grade_achievements' => 'nullable|array',
+            'grade_initials' => 'nullable|array',
+            'grade_achievements.*' => 'nullable|string|max:60',
+            'grade_initials.*' => 'nullable|string|max:3',
         ]);
 
         if ($validator->fails()) {
@@ -295,10 +300,37 @@ class SchoolSettingController extends Controller
         SchoolSetting::set('principal_name', $request->principal_name, 'text', 'report');
 
         // Save grade thresholds if provided (store as JSON)
-        if ($request->has('grade_thresholds')) {
-            $gt = array_filter($request->grade_thresholds, fn($v) => $v !== null && $v !== '');
-            // ensure keys A,B,C,D exist if possible
-            SchoolSetting::set('grade_thresholds', $gt ?: null, 'json', 'report', 'Grade thresholds (A,B,C,D)');
+        $provided = $request->input('grade_thresholds', []);
+        $existing = json_decode(SchoolSetting::get('grade_thresholds') ?? 'null', true) ?? [];
+        $defaults = ['A' => 70, 'B' => 60, 'C' => 50, 'D' => 40, 'E' => 30];
+
+        // Build clean thresholds using provided values or existing/defaults
+        $clean = [];
+        foreach (['A','B','C','D','E'] as $g) {
+            if (isset($provided[$g]) && $provided[$g] !== '') {
+                $clean[$g] = (int) $provided[$g];
+            } elseif (isset($existing[$g])) {
+                $clean[$g] = (int) $existing[$g];
+            } else {
+                $clean[$g] = $defaults[$g];
+            }
+        }
+
+        // Validate descending order: A > B > C > D > E
+        if (!($clean['A'] > $clean['B'] && $clean['B'] > $clean['C'] && $clean['C'] > $clean['D'] && $clean['D'] > $clean['E'])) {
+            return back()->withInput()->with('error', 'Grade thresholds must be strictly descending: A > B > C > D > E.');
+        }
+
+        SchoolSetting::set('grade_thresholds', $clean, 'json', 'report', 'Grade thresholds (A-E)');
+
+        // Save achievement labels and initials if provided
+        $ach = $request->input('grade_achievements', []);
+        $ini = $request->input('grade_initials', []);
+        if (!empty($ach)) {
+            SchoolSetting::set('grade_achievements', $ach, 'json', 'report', 'Grade achievement labels');
+        }
+        if (!empty($ini)) {
+            SchoolSetting::set('grade_initials', $ini, 'json', 'report', 'Grade initials');
         }
 
         return back()->with('success', 'Report card settings updated successfully!');

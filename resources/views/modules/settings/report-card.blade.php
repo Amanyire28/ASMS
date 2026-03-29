@@ -319,10 +319,14 @@
             {{-- Admin-configurable grade thresholds --}}
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 class="text-sm font-semibold text-gray-800 mb-2">Grade Thresholds (Admin)</h3>
-                <p class="text-xs text-gray-500 mb-3">Set the minimum percentage for each grade. Values must be integers between 0 and 100.</p>
-                @php $gt = json_decode($reportSettings['grade_thresholds'] ?? 'null', true) ?? []; @endphp
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    @foreach(['A','B','C','D'] as $g)
+                <p class="text-xs text-gray-500 mb-3">Set the minimum percentage for each grade. Values must be integers between 0 and 100 and strictly descending (A > B > C > D > E).</p>
+                @php
+                    $gt = json_decode($reportSettings['grade_thresholds'] ?? 'null', true) ?? [];
+                    $ach = json_decode($reportSettings['grade_achievements'] ?? 'null', true) ?? [];
+                    $ini = json_decode($reportSettings['grade_initials'] ?? 'null', true) ?? [];
+                @endphp
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    @foreach(['A','B','C','D','E'] as $g)
                     <div>
                         <label class="text-xs font-medium text-gray-700">Grade {{ $g }} (min %)</label>
                         <input type="number" name="grade_thresholds[{{ $g }}]" min="0" max="100" step="1"
@@ -331,7 +335,27 @@
                     </div>
                     @endforeach
                 </div>
-                <p class="text-xs text-gray-400 mt-2">If left empty, system defaults will be used: A &ge;70, B &ge;60, C &ge;50, D &ge;40.</p>
+                <p class="text-xs text-gray-400 mt-2">If left empty, system defaults will be used: A &ge;70, B &ge;60, C &ge;50, D &ge;40, E &ge;30.</p>
+            </div>
+
+            {{-- Achievement labels & initials --}}
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 class="text-sm font-semibold text-gray-800 mb-2">Achievement Labels & Initials</h3>
+                <p class="text-xs text-gray-500 mb-3">Customize the word label and one- to three-letter initial for each grade (A–F).</p>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    @foreach(['A','B','C','D','E','F'] as $g)
+                    <div class="col-span-2">
+                        <label class="text-xs font-medium text-gray-700">Grade {{ $g }} label</label>
+                        <input type="text" name="grade_achievements[{{ $g }}]" maxlength="60"
+                               value="{{ old('grade_achievements.'.$g, $ach[$g] ?? '') }}"
+                               class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+                        <label class="text-xs font-medium text-gray-700 mt-1">Initial</label>
+                        <input type="text" name="grade_initials[{{ $g }}]" maxlength="3"
+                               value="{{ old('grade_initials.'.$g, $ini[$g] ?? '') }}"
+                               class="w-20 border border-gray-300 rounded px-2 py-1 text-sm">
+                    </div>
+                    @endforeach
+                </div>
             </div>
 
             {{-- Submit --}}
