@@ -175,7 +175,22 @@ class ReportController extends Controller
         $marks   = $report->getMarks();
         $summary = $report->calculateSummary($marks);
 
-        return view('modules.reports.show', compact('report', 'marks', 'summary'));
+        // Exam types from school settings (fallback to a single default)
+        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
+        if (empty($examTypes)) {
+            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
+        }
+
+        // Unique subjects that appear in these marks
+        $subjects = $marks->pluck('subject')->filter()->unique('id')->sortBy('name')->values();
+
+        // Index marks as [subject_id][exam_type_id] => Mark
+        $marksGrouped = [];
+        foreach ($marks as $m) {
+            $marksGrouped[$m->subject_id][$m->exam_type] = $m;
+        }
+
+        return view('modules.reports.show', compact('report', 'marks', 'summary', 'examTypes', 'subjects', 'marksGrouped'));
     }
 
     public function getStudentsByClass(Request $request)
