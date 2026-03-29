@@ -182,18 +182,18 @@
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $subject->name }}</td>
                                 @foreach($examTypes as $et)
                                 @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
-                                <td class="px-3 py-3 text-center text-gray-700">{{ $mm ? $mm->marks_obtained : '&mdash;' }}</td>
+                                <td class="px-3 py-3 text-center text-gray-700">{{ $mm !== null ? $mm->marks_obtained : '-' }}</td>
                                 @endforeach
                                 @if($showTotal)
                                 <td class="px-3 py-3 text-center font-semibold text-gray-800">
-                                    {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '&mdash;' }}
+                                    {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}
                                 </td>
                                 @endif
                                 <td class="px-3 py-3 text-center font-medium text-gray-700">
-                                    {{ $subPct !== null ? $subPct . '%' : '&mdash;' }}
+                                    {{ $subPct !== null ? $subPct . '%' : '-' }}
                                 </td>
-                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '&mdash;' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '&mdash;' }}</td>
+                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '-' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '-' }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -202,7 +202,7 @@
                             <tr>
                                 <td class="px-4 py-3 font-semibold text-gray-800">TOTAL / AVERAGE</td>
                                 @foreach($examTypes as $et)
-                                <td class="px-3 py-3 text-center text-gray-400">&mdash;</td>
+                                <td class="px-3 py-3 text-center text-gray-400">-</td>
                                 @endforeach
                                 @if($showTotal)
                                 <td class="px-3 py-3 text-center font-semibold text-gray-800">

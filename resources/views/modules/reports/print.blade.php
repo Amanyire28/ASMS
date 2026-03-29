@@ -329,18 +329,18 @@
                     <td>{{ $subject->name }}</td>
                     @foreach($examTypes as $et)
                     @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
-                    <td class="center">{{ $mm ? $mm->marks_obtained : '&mdash;' }}</td>
+                    <td class="center">{{ $mm !== null ? $mm->marks_obtained : '-' }}</td>
                     @endforeach
                     @if($showTotal)
                     <td class="center" style="font-weight:600;">
-                        {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '&mdash;' }}
+                        {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}
                     </td>
                     @endif
-                    <td class="center">{{ $subPct !== null ? $subPct . '%' : '&mdash;' }}</td>
+                    <td class="center">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
                     <td class="center">
-                        <span class="grade-badge">{{ $subGrade ?? '&mdash;' }}</span>
+                        <span class="grade-badge">{{ $subGrade ?? '-' }}</span>
                     </td>
-                    <td>{{ $remarks ?? '&mdash;' }}</td>
+                    <td>{{ $remarks ?? '-' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -348,7 +348,7 @@
                 <tr>
                     <td>TOTAL / AVERAGE</td>
                     @foreach($examTypes as $et)
-                    <td class="center">&mdash;</td>
+                    <td class="center">-</td>
                     @endforeach
                     @if($showTotal)
                     <td class="center" style="font-weight:600;">
