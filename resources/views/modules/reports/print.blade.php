@@ -285,7 +285,6 @@
             @if(school_setting('letterhead_text'))
             <div class="letterhead">{{ school_setting('letterhead_text') }}</div>
             @endif
-            <div class="report-title">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
         </div>
         <hr class="header-rule">
         <hr class="header-rule-2">

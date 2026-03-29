@@ -82,11 +82,6 @@
             @if(school_setting('letterhead_text'))
             <p class="text-gray-500 text-sm mt-1">{{ school_setting('letterhead_text') }}</p>
             @endif
-            <div class="mt-2 inline-block border border-gray-400 rounded px-3 py-1">
-                <span class="text-sm font-semibold uppercase tracking-wider text-gray-700">
-                    {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
-                </span>
-            </div>
         </div>
 
         {{-- Double-line separator --}}
