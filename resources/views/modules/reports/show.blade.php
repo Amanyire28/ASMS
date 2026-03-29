@@ -95,10 +95,11 @@
 
         <div class="p-6 space-y-6">
 
-            {{-- Student Info: details on left, profile photo on right --}}
-            <div class="flex items-stretch gap-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                {{-- Details --}}
-                <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {{-- Student Info: details left | title centre | photo right --}}
+            <div class="grid grid-cols-3 gap-4 bg-gray-50 rounded-lg p-4 border border-gray-200 items-center">
+
+                {{-- Left: student details stacked in one column --}}
+                <div class="flex flex-col gap-2">
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student Name</p>
                         <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->full_name }}</p>
@@ -116,20 +117,32 @@
                         <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->term }}, {{ $report->academic_year }}</p>
                     </div>
                 </div>
-                {{-- Vertical divider --}}
-                <div class="w-px bg-gray-300 shrink-0"></div>
-                {{-- Profile Photo --}}
-                <div class="shrink-0 flex flex-col items-center justify-center w-24">
+
+                {{-- Centre: report card label --}}
+                <div class="flex flex-col items-center justify-center text-center border-x border-gray-300 px-4 py-2">
+                    <span class="text-lg font-extrabold uppercase tracking-widest text-gray-800 leading-tight">
+                        Report<br>Card
+                    </span>
+                    <div class="mt-2 text-xs text-gray-500 font-medium uppercase tracking-wide">
+                        {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
+                    </div>
+                </div>
+
+                {{-- Right: profile photo --}}
+                <div class="flex flex-col items-center justify-center">
                     @if($report->student->photo)
                     <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo"
-                         class="h-24 w-20 object-cover rounded-lg border-2 border-gray-300 shadow-sm">
+                         class="h-28 w-24 object-cover rounded-lg border-2 border-gray-300 shadow-sm">
                     @else
-                    <div class="h-24 w-20 rounded-lg bg-blue-100 flex items-center justify-center border-2 border-gray-300">
-                        <span class="text-blue-700 font-bold text-xl">{{ strtoupper(substr($report->student->first_name, 0, 1) . substr($report->student->last_name, 0, 1)) }}</span>
+                    <div class="h-28 w-24 rounded-lg bg-blue-100 flex items-center justify-center border-2 border-gray-300">
+                        <span class="text-blue-700 font-bold text-2xl">
+                            {{ strtoupper(substr($report->student->first_name, 0, 1) . substr($report->student->last_name, 0, 1)) }}
+                        </span>
                     </div>
                     @endif
                     <p class="text-xs text-gray-400 mt-1">Photo</p>
                 </div>
+
             </div>
 
             {{-- Marks Table --}}

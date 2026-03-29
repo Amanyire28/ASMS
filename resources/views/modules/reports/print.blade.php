@@ -68,8 +68,9 @@
 
         /* ---- Student Info ---- */
         .student-section {
-            display: flex;
-            align-items: flex-start;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
             gap: 14px;
             background: #f8fafc;
             border: 1px solid #e5e7eb;
@@ -78,22 +79,41 @@
             margin-bottom: 18px;
         }
         .student-details {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
-        .student-divider { width: 1px; background: #d1d5db; flex-shrink: 0; align-self: stretch; }
-        .student-photo { flex-shrink: 0; text-align: center; width: 72px; }
-        .student-photo img { width: 72px; height: 88px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; }
+        .student-title {
+            text-align: center;
+            border-left: 1px solid #d1d5db;
+            border-right: 1px solid #d1d5db;
+            padding: 8px 18px;
+        }
+        .student-title .rc-heading {
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #111827;
+            line-height: 1.2;
+        }
+        .student-title .rc-subtype {
+            font-size: 9px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .student-photo { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .student-photo img { width: 80px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; }
         .student-photo .photo-initials {
-            width: 72px; height: 88px; background: #dbeafe; color: #1d4ed8;
+            width: 80px; height: 100px; background: #dbeafe; color: #1d4ed8;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 4px; font-size: 22px; font-weight: 700; border: 1px solid #bfdbfe;
+            border-radius: 4px; font-size: 24px; font-weight: 700; border: 1px solid #bfdbfe;
         }
         .student-photo .photo-label { font-size: 9px; color: #9ca3af; margin-top: 3px; }
         .info-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .7px; }
-        .info-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 3px; }
+        .info-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 2px; }
 
         /* ---- Marks Table ---- */
         .section-title {
@@ -251,8 +271,9 @@
         <hr class="header-rule">
         <hr class="header-rule-2">
 
-        {{-- Student Info: details on left, photo on right --}}
+        {{-- Student Info: details left | title centre | photo right --}}
         <div class="student-section">
+            {{-- Left: student details stacked --}}
             <div class="student-details">
                 <div>
                     <div class="info-label">Student Name</div>
@@ -271,7 +292,12 @@
                     <div class="info-value">{{ $report->term }}, {{ $report->academic_year }}</div>
                 </div>
             </div>
-            <div class="student-divider"></div>
+            {{-- Centre: Report Card title --}}
+            <div class="student-title">
+                <div class="rc-heading">Report<br>Card</div>
+                <div class="rc-subtype">{{ ucwords(str_replace('_', ' ', $report->report_type)) }}</div>
+            </div>
+            {{-- Right: photo --}}
             <div class="student-photo">
                 @if($report->student->photo)
                 <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo">
