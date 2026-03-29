@@ -191,8 +191,45 @@ class SchoolSettingController extends Controller
         abort_unless(auth()->user()->can('system.settings'), 403);
 
         $reportSettings = SchoolSetting::getByGroup('report')->pluck('value', 'key');
+        $examTypes = SchoolSetting::get('exam_types') ?? [];
 
-        return view('modules.settings.report-card', compact('reportSettings'));
+        return view('modules.settings.report-card', compact('reportSettings', 'examTypes'));
+    }
+
+    /**
+     * Update exam types configuration
+     */
+    public function updateExamTypes(Request $request)
+    {
+        abort_unless(auth()->user()->can('system.settings'), 403);
+
+        $validator = Validator::make($request->all(), [
+            'exam_types'             => 'nullable|array|max:10',
+            'exam_types.*.id'        => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'exam_types.*.label'     => 'required|string|max:60',
+            'exam_types.*.max_marks' => 'required|numeric|min:1|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->with('error', 'Please correct the exam type errors.')
+                ->withInput();
+        }
+
+        $types = collect($request->exam_types ?? [])
+            ->values()
+            ->map(fn ($t, $i) => [
+                'id'        => trim($t['id']),
+                'label'     => trim($t['label']),
+                'max_marks' => (float) $t['max_marks'],
+                'order'     => $i + 1,
+            ])
+            ->toArray();
+
+        SchoolSetting::set('exam_types', $types, 'json', 'academic');
+
+        return back()->with('exam_success', 'Exam types saved successfully.');
     }
 
     /**

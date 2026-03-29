@@ -136,58 +136,82 @@
             <div>
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Academic Performance</h3>
                 @if($marks->count() > 0)
+                @php $showTotal = count($examTypes) > 1; @endphp
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Subject</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Score</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Out Of</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">%</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
+                                @foreach($examTypes as $et)
+                                <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase leading-tight">
+                                    {{ $et['label'] }}<br>
+                                    <span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] }}</span>
+                                </th>
+                                @endforeach
+                                @if($showTotal)
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total</th>
+                                @endif
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">%</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
-                            @foreach($marks as $mark)
+                            @foreach($subjects as $subject)
                             @php
-                                $pct = $mark->total_marks > 0
-                                    ? round(($mark->marks_obtained / $mark->total_marks) * 100, 1)
-                                    : 0;
-                                $gradeColor = match(true) {
-                                    $pct >= 80 => 'bg-green-100 text-green-800',
-                                    $pct >= 60 => 'bg-blue-100 text-blue-800',
-                                    $pct >= 40 => 'bg-yellow-100 text-yellow-800',
-                                    default    => 'bg-red-100 text-red-800',
-                                };
+                                $subObt = 0; $subTot = 0;
+                                foreach ($examTypes as $et) {
+                                    $mm = $marksGrouped[$subject->id][$et['id']] ?? null;
+                                    if ($mm) { $subObt += (float)$mm->marks_obtained; $subTot += (float)$mm->total_marks; }
+                                }
+                                $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
+                                if ($subPct !== null) {
+                                    if ($subPct >= 90) $subGrade = 'A+';
+                                    elseif ($subPct >= 80) $subGrade = 'A';
+                                    elseif ($subPct >= 70) $subGrade = 'B+';
+                                    elseif ($subPct >= 60) $subGrade = 'B';
+                                    elseif ($subPct >= 50) $subGrade = 'C+';
+                                    elseif ($subPct >= 40) $subGrade = 'C';
+                                    elseif ($subPct >= 30) $subGrade = 'D';
+                                    else $subGrade = 'F';
+                                } else { $subGrade = null; }
+                                $firstMark = collect($marksGrouped[$subject->id] ?? [])->first();
+                                $remarks   = $firstMark->remarks ?? null;
                             @endphp
                             <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 font-medium text-gray-900">{{ $mark->subject->name ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 text-center text-gray-700">{{ $mark->marks_obtained }}</td>
-                                <td class="px-4 py-3 text-center text-gray-500">{{ $mark->total_marks }}</td>
-                                <td class="px-4 py-3 text-center font-medium text-gray-700">{{ $pct }}%</td>
-                                <td class="px-4 py-3 text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $gradeColor }}">
-                                        {{ $mark->grade ?? '—' }}
-                                    </span>
+                                <td class="px-4 py-3 font-medium text-gray-900">{{ $subject->name }}</td>
+                                @foreach($examTypes as $et)
+                                @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
+                                <td class="px-3 py-3 text-center text-gray-700">{{ $mm ? $mm->marks_obtained : '&mdash;' }}</td>
+                                @endforeach
+                                @if($showTotal)
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">
+                                    {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '&mdash;' }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $mark->remarks ?? '—' }}</td>
+                                @endif
+                                <td class="px-3 py-3 text-center font-medium text-gray-700">
+                                    {{ $subPct !== null ? $subPct . '%' : '&mdash;' }}
+                                </td>
+                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '&mdash;' }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '&mdash;' }}</td>
                             </tr>
                             @endforeach
                         </tbody>
                         {{-- Summary Row --}}
-                        <tfoot class="bg-blue-50">
+                        <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-4 py-3 font-semibold text-gray-800">TOTAL / AVERAGE</td>
-                                <td class="px-4 py-3 text-center font-semibold text-gray-800">{{ $summary['total_marks'] }}</td>
-                                <td class="px-4 py-3 text-center font-semibold text-gray-500">{{ $summary['total_possible'] }}</td>
-                                <td class="px-4 py-3 text-center font-semibold text-blue-700">{{ $summary['average_percentage'] }}%</td>
-                                <td class="px-4 py-3 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-600 text-white">
-                                        {{ $summary['grade'] }}
-                                    </span>
+                                @foreach($examTypes as $et)
+                                <td class="px-3 py-3 text-center text-gray-400">&mdash;</td>
+                                @endforeach
+                                @if($showTotal)
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">
+                                    {{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subjects</td>
+                                @endif
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}%</td>
+                                <td class="px-3 py-3 text-center font-bold text-gray-900">{{ $summary['grade'] }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subject(s)</td>
                             </tr>
                         </tfoot>
                     </table>

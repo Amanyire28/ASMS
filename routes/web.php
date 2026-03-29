@@ -482,6 +482,9 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         Route::post('settings/school-profile/report-card', [SchoolSettingController::class, 'updateReportCardSettings'])
             ->name('settings.update-report-card');
 
+        Route::post('settings/school-profile/exam-types', [SchoolSettingController::class, 'updateExamTypes'])
+            ->name('settings.update-exam-types');
+
         // Delete routes
         Route::delete('settings/school-profile/delete-logo', [SchoolSettingController::class, 'deleteLogo'])
             ->name('settings.delete-logo');

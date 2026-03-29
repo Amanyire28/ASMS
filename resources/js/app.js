@@ -7,7 +7,12 @@ window.Alpine = Alpine;
 // ── Per-subject "Out Of" totals store (used by multi-subject mark sheet) ──
 Alpine.store('marksTotals', {
     totals: {},
-    getTotal: function(id) { return parseFloat(this.totals[String(id)]) || 100; }
+    // sid = subject id, etId = exam type id
+    getTotal: function(sid, etId) {
+        var st = this.totals[String(sid)];
+        if (!st) return 100;
+        return parseFloat(st[String(etId)]) || 100;
+    }
 });
 
 // ── Marks entry selector component ──────────────────────────

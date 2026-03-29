@@ -120,16 +120,10 @@
         tbody td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
         tbody td.center { text-align: center; }
         .grade-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
             font-size: 11px;
             font-weight: 700;
+            color: #111827;
         }
-        .grade-a  { background: #dcfce7; color: #166534; }
-        .grade-b  { background: #dbeafe; color: #1e40af; }
-        .grade-c  { background: #fef9c3; color: #854d0e; }
-        .grade-f  { background: #fee2e2; color: #991b1b; }
         tfoot td {
             background: #f3f4f6;
             font-weight: 700;
@@ -139,13 +133,9 @@
         }
         tfoot td.center { text-align: center; }
         .total-grade {
-            display: inline-block;
-            background: #374151;
-            color: #fff;
-            padding: 3px 10px;
-            border-radius: 10px;
             font-size: 12px;
             font-weight: 800;
+            color: #111827;
         }
 
         /* ---- Signatures ---- */
@@ -295,52 +285,81 @@
         {{-- Marks Table --}}
         <div class="section-title">Academic Performance</div>
         @if($marks->count() > 0)
+        @php $showTotal = count($examTypes) > 1; @endphp
         <table>
             <thead>
                 <tr>
                     <th>Subject</th>
-                    <th class="center">Score</th>
-                    <th class="center">Out Of</th>
+                    @foreach($examTypes as $et)
+                    <th class="center" style="min-width:55px;">{{ $et['label'] }}<br>
+                        <span style="font-weight:400;font-size:9px;color:#6b7280;">/ {{ $et['max_marks'] }}</span>
+                    </th>
+                    @endforeach
+                    @if($showTotal)
+                    <th class="center" style="min-width:65px;">Total</th>
+                    @endif
                     <th class="center">%</th>
                     <th class="center">Grade</th>
                     <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($marks as $mark)
+                @foreach($subjects as $subject)
                 @php
-                    $pct = $mark->total_marks > 0
-                        ? round(($mark->marks_obtained / $mark->total_marks) * 100, 1)
-                        : 0;
-                    $badgeClass = match(true) {
-                        $pct >= 80 => 'grade-a',
-                        $pct >= 60 => 'grade-b',
-                        $pct >= 40 => 'grade-c',
-                        default    => 'grade-f',
-                    };
+                    $subObt = 0; $subTot = 0;
+                    foreach ($examTypes as $et) {
+                        $mm = $marksGrouped[$subject->id][$et['id']] ?? null;
+                        if ($mm) { $subObt += (float)$mm->marks_obtained; $subTot += (float)$mm->total_marks; }
+                    }
+                    $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
+                    if ($subPct !== null) {
+                        if ($subPct >= 90) $subGrade = 'A+';
+                        elseif ($subPct >= 80) $subGrade = 'A';
+                        elseif ($subPct >= 70) $subGrade = 'B+';
+                        elseif ($subPct >= 60) $subGrade = 'B';
+                        elseif ($subPct >= 50) $subGrade = 'C+';
+                        elseif ($subPct >= 40) $subGrade = 'C';
+                        elseif ($subPct >= 30) $subGrade = 'D';
+                        else $subGrade = 'F';
+                    } else { $subGrade = null; }
+                    $firstMark = collect($marksGrouped[$subject->id] ?? [])->first();
+                    $remarks   = $firstMark->remarks ?? null;
                 @endphp
                 <tr>
-                    <td>{{ $mark->subject->name ?? 'N/A' }}</td>
-                    <td class="center">{{ $mark->marks_obtained }}</td>
-                    <td class="center">{{ $mark->total_marks }}</td>
-                    <td class="center">{{ $pct }}%</td>
-                    <td class="center">
-                        <span class="grade-badge {{ $badgeClass }}">{{ $mark->grade ?? '—' }}</span>
+                    <td>{{ $subject->name }}</td>
+                    @foreach($examTypes as $et)
+                    @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
+                    <td class="center">{{ $mm ? $mm->marks_obtained : '&mdash;' }}</td>
+                    @endforeach
+                    @if($showTotal)
+                    <td class="center" style="font-weight:600;">
+                        {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '&mdash;' }}
                     </td>
-                    <td>{{ $mark->remarks ?? '—' }}</td>
+                    @endif
+                    <td class="center">{{ $subPct !== null ? $subPct . '%' : '&mdash;' }}</td>
+                    <td class="center">
+                        <span class="grade-badge">{{ $subGrade ?? '&mdash;' }}</span>
+                    </td>
+                    <td>{{ $remarks ?? '&mdash;' }}</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr>
                     <td>TOTAL / AVERAGE</td>
-                    <td class="center">{{ $summary['total_marks'] }}</td>
-                    <td class="center">{{ $summary['total_possible'] }}</td>
+                    @foreach($examTypes as $et)
+                    <td class="center">&mdash;</td>
+                    @endforeach
+                    @if($showTotal)
+                    <td class="center" style="font-weight:600;">
+                        {{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}
+                    </td>
+                    @endif
                     <td class="center">{{ $summary['average_percentage'] }}%</td>
                     <td class="center">
                         <span class="total-grade">{{ $summary['grade'] }}</span>
                     </td>
-                    <td>{{ $summary['subject_count'] }} subjects</td>
+                    <td>{{ $summary['subject_count'] }} subject(s)</td>
                 </tr>
             </tfoot>
         </table>

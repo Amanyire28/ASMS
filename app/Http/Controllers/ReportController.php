@@ -82,16 +82,36 @@ class ReportController extends Controller
         $marks   = $report->getMarks();
         $summary = $report->calculateSummary($marks);
 
-        return view('modules.reports.show', compact('report', 'marks', 'summary'));
+        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
+        if (empty($examTypes)) {
+            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
+        }
+        $marksGrouped = [];
+        foreach ($marks as $m) {
+            $marksGrouped[$m->subject_id][$m->exam_type ?? 'Final'] = $m;
+        }
+        $subjects = $marks->sortBy('subject.name')->pluck('subject')->filter()->unique('id')->values();
+
+        return view('modules.reports.show', compact('report', 'marks', 'summary', 'examTypes', 'marksGrouped', 'subjects'));
     }
 
     public function print(ReportGeneration $report)
     {
         $report->load(['student.class', 'generatedBy']);
-        $marks   = $report->getMarks();
-        $summary = $report->calculateSummary($marks);
+        $marks = $report->getMarks();
+        $summary = $report->calculateSummary();
 
-        return view('modules.reports.print', compact('report', 'marks', 'summary'));
+        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
+        if (empty($examTypes)) {
+            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
+        }
+        $marksGrouped = [];
+        foreach ($marks as $m) {
+            $marksGrouped[$m->subject_id][$m->exam_type ?? 'Final'] = $m;
+        }
+        $subjects = $marks->sortBy('subject.name')->pluck('subject')->filter()->unique('id')->values();
+
+        return view('modules.reports.print', compact('report', 'marks', 'summary', 'examTypes', 'marksGrouped', 'subjects'));
     }
 
     public function destroy(ReportGeneration $report)

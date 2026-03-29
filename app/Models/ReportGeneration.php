@@ -67,7 +67,7 @@ class ReportGeneration extends Model
             'total_possible' => $totalPossible,
             'average_percentage' => round($averagePercentage, 2),
             'grade' => $this->calculateGrade($averagePercentage),
-            'subject_count' => $marks->count()
+            'subject_count' => $marks->pluck('subject_id')->unique()->count()
         ];
     }
 

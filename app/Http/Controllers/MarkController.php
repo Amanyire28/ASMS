@@ -25,6 +25,7 @@ class MarkController extends Controller
 
         $terms = ['Term 1', 'Term 2', 'Term 3'];
         $years = $this->academicYears();
+        $examTypes = $this->getExamTypes();
 
         // ── Grid mode: all three filters present → full student × subject sheet ──
         if ($request->filled('class_id') && $request->filled('term') && $request->filled('academic_year')) {
@@ -46,21 +47,33 @@ class MarkController extends Controller
                 'academic_year' => $request->academic_year,
             ])->whereIn('subject_id', $classSubjects->pluck('id'))->get();
 
+            // 3-D grid: [student_id][subject_id][exam_type] = Mark
             $marksGrid = [];
             foreach ($flat as $m) {
-                $marksGrid[$m->student_id][$m->subject_id] = $m;
+                $marksGrid[$m->student_id][$m->subject_id][$m->exam_type] = $m;
+            }
+
+            // Aggregated per (student, subject): sum across all exam types
+            $marksAgg = []; // [student_id][subject_id] = ['obtained','total','mark_id']
+            foreach ($flat as $m) {
+                $agg = &$marksAgg[$m->student_id][$m->subject_id];
+                if (!isset($agg)) {
+                    $agg = ['obtained' => 0, 'total' => 0, 'mark_id' => $m->id];
+                }
+                $agg['obtained'] += (float) $m->marks_obtained;
+                $agg['total']    += (float) $m->total_marks;
             }
 
             $selection = $request->only(['class_id', 'term', 'academic_year']);
 
             return view('modules.marks.index', compact(
-                'classes', 'terms', 'years',
-                'class', 'classSubjects', 'students', 'marksGrid', 'selection'
+                'classes', 'terms', 'years', 'examTypes',
+                'class', 'classSubjects', 'students', 'marksGrid', 'marksAgg', 'selection'
             ));
         }
 
         // ── Prompt mode: not all filters set yet ──
-        return view('modules.marks.index', compact('classes', 'terms', 'years'));
+        return view('modules.marks.index', compact('classes', 'terms', 'years', 'examTypes'));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -111,8 +124,9 @@ class MarkController extends Controller
             'academic_year' => 'required|string',
         ]);
 
-        $teacher = $this->currentTeacher();
-        $class   = ClassModel::findOrFail($request->class_id);
+        $teacher   = $this->currentTeacher();
+        $class     = ClassModel::findOrFail($request->class_id);
+        $examTypes = $this->getExamTypes();
 
         // Load subjects for columns — teacher-scoped when applicable
         $classSubjectsQuery = $class->subjects()
@@ -129,7 +143,7 @@ class MarkController extends Controller
 
         $students = $class->students()->where('is_active', true)->orderBy('first_name')->get();
 
-        // Load all existing marks for this class/term/year and build a 2D map [student_id][subject_id]
+        // All marks for this class/term/year → 3-D map [student_id][subject_id][exam_type] = Mark
         $flat = Mark::where([
             'class_id'      => $request->class_id,
             'term'          => $request->term,
@@ -138,17 +152,34 @@ class MarkController extends Controller
 
         $existingMarks = [];
         foreach ($flat as $m) {
-            $existingMarks[$m->student_id][$m->subject_id] = $m;
+            $existingMarks[$m->student_id][$m->subject_id][$m->exam_type] = $m;
         }
 
-        // Default "Out Of" per subject — use the most recent saved value, or 100
+        // initTotals[subject_id][exam_type_id] — start at setting's max_marks, override with saved value
         $initTotals = [];
         foreach ($classSubjects as $s) {
-            $initTotals[(string) $s->id] = 100;
-            foreach ($flat as $m) {
-                if ($m->subject_id == $s->id) {
-                    $initTotals[(string) $s->id] = (float) $m->total_marks;
-                    break;
+            $initTotals[(string) $s->id] = [];
+            foreach ($examTypes as $et) {
+                $saved = $existingMarks['*'][$s->id][$et['id']] ?? null; // won't exist
+                $initTotals[(string) $s->id][$et['id']] = (float) $et['max_marks'];
+            }
+            // Override with any saved total_marks for each exam type
+            foreach ($flat->where('subject_id', $s->id) as $m) {
+                if (isset($initTotals[(string) $s->id][$m->exam_type])) {
+                    $initTotals[(string) $s->id][$m->exam_type] = (float) $m->total_marks;
+                }
+            }
+        }
+
+        // initialVals[student_id][subject_id][exam_type_id] = obtained string ('' if empty)
+        $initialVals = [];
+        foreach ($students as $student) {
+            $initialVals[$student->id] = [];
+            foreach ($classSubjects as $s) {
+                $initialVals[$student->id][$s->id] = [];
+                foreach ($examTypes as $et) {
+                    $m = $existingMarks[$student->id][$s->id][$et['id']] ?? null;
+                    $initialVals[$student->id][$s->id][$et['id']] = $m ? (string) $m->marks_obtained : '';
                 }
             }
         }
@@ -163,8 +194,9 @@ class MarkController extends Controller
         $years = $this->academicYears();
 
         return view('modules.marks.entry', compact(
-            'class', 'classSubjects', 'students',
-            'existingMarks', 'initTotals', 'selection', 'classes', 'terms', 'years'
+            'class', 'classSubjects', 'students', 'examTypes',
+            'existingMarks', 'initTotals', 'initialVals', 'selection',
+            'classes', 'terms', 'years'
         ));
     }
 
@@ -178,41 +210,46 @@ class MarkController extends Controller
             'term'          => 'required|string',
             'academic_year' => 'required|string',
             'total'         => 'required|array',
-            'total.*'       => 'required|numeric|min:1|max:400',
             'marks'         => 'required|array',
-            'marks.*'       => 'array',
-            'marks.*.*'     => 'nullable|numeric|min:0',
         ]);
 
         $teacher = $this->currentTeacher();
 
+        // marks[studentId][subjectId][examTypeId] = obtained
+        // total[subjectId][examTypeId]            = max_marks
         foreach ($request->marks as $studentId => $subjects) {
-            foreach ($subjects as $subjectId => $obtained) {
-                if ($obtained === null || $obtained === '') continue;
-
-                // Skip subjects not assigned to this teacher
-                if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $subjectId)) {
-                    continue;
+            foreach ($subjects as $subjectId => $examTypes) {
+                if (!is_array($examTypes)) {
+                    // Fallback for legacy flat submission (no exam type)
+                    $examTypes = ['Final' => $examTypes];
                 }
+                foreach ($examTypes as $examTypeId => $obtained) {
+                    if ($obtained === null || $obtained === '') continue;
 
-                $total    = (float) ($request->total[$subjectId] ?? 100);
-                $obtained = min((float) $obtained, $total);
+                    if ($teacher && !$this->teacherOwnsAssignment($teacher, $request->class_id, $subjectId)) {
+                        continue;
+                    }
 
-                Mark::updateOrCreate(
-                    [
-                        'student_id'    => $studentId,
-                        'subject_id'    => $subjectId,
-                        'class_id'      => $request->class_id,
-                        'term'          => $request->term,
-                        'academic_year' => $request->academic_year,
-                    ],
-                    [
-                        'marks_obtained' => $obtained,
-                        'total_marks'    => $total,
-                        'grade'          => $this->grade($obtained, $total),
-                        'remarks'        => null,
-                    ]
-                );
+                    $total    = (float) (($request->total[$subjectId][$examTypeId] ?? null) ?? ($request->total[$subjectId] ?? 100));
+                    $obtained = min((float) $obtained, $total);
+
+                    Mark::updateOrCreate(
+                        [
+                            'student_id'    => $studentId,
+                            'subject_id'    => $subjectId,
+                            'class_id'      => $request->class_id,
+                            'term'          => $request->term,
+                            'academic_year' => $request->academic_year,
+                            'exam_type'     => $examTypeId,
+                        ],
+                        [
+                            'marks_obtained' => $obtained,
+                            'total_marks'    => $total,
+                            'grade'          => $this->grade($obtained, $total),
+                            'remarks'        => null,
+                        ]
+                    );
+                }
             }
         }
 
@@ -343,9 +380,17 @@ class MarkController extends Controller
             ->exists();
     }
 
-    private function grade(float $obtained, float $total): string
+    /** Return configured exam types; falls back to single 'Final' type for legacy behaviour. */
+    private function getExamTypes(): array
     {
-        if ($total <= 0) return 'N/A';
+        $types = \App\Models\SchoolSetting::get('exam_types') ?? [];
+        if (empty($types)) {
+            return [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
+        }
+        return $types;
+    }
+
+    private function grade(float $obtained, float $total): string
         $pct = ($obtained / $total) * 100;
         if ($pct >= 90) return 'A+';
         if ($pct >= 80) return 'A';

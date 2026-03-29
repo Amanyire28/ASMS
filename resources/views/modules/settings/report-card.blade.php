@@ -27,7 +27,132 @@
     </div>
     @endif
 
-    {{-- Settings Form --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    {{-- Exam Types Card                                         --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-layer-group text-indigo-500"></i>
+                    Exam Types Configuration
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Define each examination type (e.g. BOT, Midterm, EOT). These appear as columns on the marks entry form and on report cards.
+                    The <strong>Code</strong> must be unique, short, and never changed after marks are entered.
+                </p>
+            </div>
+        </div>
+
+        @if(session('exam_success'))
+        <div class="mx-6 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 flex items-center gap-2 text-sm">
+            <i class="fas fa-check-circle text-green-500"></i>{{ session('exam_success') }}
+        </div>
+        @endif
+
+        <div class="p-6" x-data="{
+            rows: {{ Js::from(count($examTypes) ? $examTypes : [['id'=>'Final','label'=>'Final Exam','max_marks'=>100]]) }},
+            addRow() { this.rows.push({ id: '', label: '', max_marks: 100 }); },
+            removeRow(i) { this.rows.splice(i, 1); }
+        }">
+            <form action="{{ route('settings.update-exam-types') }}" method="POST">
+                @csrf
+
+                <div class="overflow-x-auto rounded-lg border border-gray-200 mb-4">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase w-4">#</th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase">
+                                    Code <span class="text-red-500">*</span>
+                                    <span class="font-normal text-gray-400 ml-1">(stored in DB, never change after use)</span>
+                                </th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase">
+                                    Display Label <span class="text-red-500">*</span>
+                                </th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase w-32">
+                                    Default Max Marks
+                                </th>
+                                <th class="px-4 py-2 text-center font-semibold text-gray-600 text-xs uppercase w-16">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(row, i) in rows" :key="i">
+                                <tr class="border-b border-gray-100 last:border-b-0">
+                                    <td class="px-4 py-2 text-gray-400 text-xs" x-text="i + 1"></td>
+                                    <td class="px-4 py-2">
+                                        <input :name="'exam_types['+i+'][id]'"
+                                               x-model="row.id"
+                                               placeholder="e.g. BOT"
+                                               maxlength="30"
+                                               pattern="[A-Za-z0-9_\-]+"
+                                               title="Letters, numbers, hyphens and underscores only"
+                                               required
+                                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm uppercase focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <input :name="'exam_types['+i+'][label]'"
+                                               x-model="row.label"
+                                               placeholder="e.g. Beginning of Term"
+                                               maxlength="60"
+                                               required
+                                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <input :name="'exam_types['+i+'][max_marks]'"
+                                               x-model.number="row.max_marks"
+                                               type="number" min="1" max="1000" step="0.5"
+                                               required
+                                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <button type="button" @click="removeRow(i)"
+                                                class="text-red-400 hover:text-red-600 transition-colors"
+                                                title="Remove exam type">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="rows.length === 0">
+                                <td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm italic">
+                                    No exam types defined. Add at least one below.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button type="button" @click="addRow()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-indigo-400
+                                   text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm transition-colors">
+                        <i class="fas fa-plus text-xs"></i> Add Exam Type
+                    </button>
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700
+                                   text-white text-sm font-semibold rounded-lg transition-colors">
+                        <i class="fas fa-save"></i> Save Exam Types
+                    </button>
+                </div>
+
+                @error('exam_types.*.id')
+                <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+                @error('exam_types.*.label')
+                <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </form>
+
+            <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                <strong>Important:</strong> Once marks are recorded, do <em>not</em> change or remove exam type codes — doing so will cause historical marks to become unlinked.
+                The default code <code class="bg-amber-100 px-1 rounded">Final</code> matches all marks entered before exam types were configured.
+            </div>
+        </div>
+    </div>
+
+    {{-- Report Card Configuration Card --}}
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 bg-gray-50">
             <h2 class="font-semibold text-gray-800 flex items-center gap-2">

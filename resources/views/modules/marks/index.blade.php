@@ -96,15 +96,6 @@
             if ($pct >= 30) return 'D';
             return 'F';
         };
-        $gradeColor = function(string $g): string {
-            return match($g) {
-                'A+','A'  => 'bg-green-100 text-green-700',
-                'B+','B'  => 'bg-blue-100 text-blue-700',
-                'C+','C'  => 'bg-yellow-100 text-yellow-700',
-                'D'       => 'bg-orange-100 text-orange-700',
-                default   => 'bg-red-100 text-red-700',
-            };
-        };
     @endphp
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
@@ -137,12 +128,12 @@
             <p>No active students in this class.</p>
         </div>
         @else
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700">
-            <table class="w-full table-fixed border-separate border-spacing-0 text-sm">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+            <table class="border-separate border-spacing-0 text-sm" style="min-width:max-content;">
                 <colgroup>
                     <col class="w-8">
                     <col class="w-36">
-                    @foreach($classSubjects as $s)<col>@endforeach
+                    @foreach($classSubjects as $s)<col class="min-w-[90px]">@endforeach
                     <col class="w-24">
                     <col class="w-16">
                     <col class="w-16">
@@ -156,13 +147,6 @@
                                    text-left text-xs font-semibold text-gray-500 uppercase
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">Student</th>
                         @foreach($classSubjects as $subject)
-                        @php
-                            $colTotal = null;
-                            foreach ($students as $st) {
-                                $m = $marksGrid[$st->id][$subject->id] ?? null;
-                                if ($m) { $colTotal = $m->total_marks; break; }
-                            }
-                        @endphp
                         <th class="bg-gray-50 dark:bg-gray-900 py-2 px-1 text-center
                                    border-b-2 border-r border-gray-200 dark:border-gray-700">
                             <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate leading-tight"
@@ -170,8 +154,10 @@
                             @if($subject->code)
                             <div class="text-xs text-gray-400 font-normal truncate">{{ $subject->code }}</div>
                             @endif
-                            @if($colTotal !== null)
-                            <div class="text-xs text-gray-400 font-normal">/ {{ $colTotal }}</div>
+                            @if(count($examTypes) > 1)
+                            <div class="text-xs text-gray-400 font-normal leading-tight">
+                                {{ implode('+', array_column($examTypes, 'label')) }}
+                            </div>
                             @endif
                         </th>
                         @endforeach
@@ -196,10 +182,10 @@
                         $rowTotal = 0;
                         $rowCount = 0;
                         foreach ($classSubjects as $s) {
-                            $m = $marksGrid[$student->id][$s->id] ?? null;
-                            if ($m) {
-                                $rowObt   += (float) $m->marks_obtained;
-                                $rowTotal += (float) $m->total_marks;
+                            $agg = $marksAgg[$student->id][$s->id] ?? null;
+                            if ($agg) {
+                                $rowObt   += (float) $agg['obtained'];
+                                $rowTotal += (float) $agg['total'];
                                 $rowCount++;
                             }
                         }
@@ -231,21 +217,30 @@
                                 </div>
                             </div>
                         </td>
-                        {{-- One cell per subject --}}
+                        {{-- One aggregated cell per subject --}}
                         @foreach($classSubjects as $subject)
-                        @php $mark = $marksGrid[$student->id][$subject->id] ?? null; @endphp
+                        @php
+                            $agg = $marksAgg[$student->id][$subject->id] ?? null;
+                            $subGrade = null;
+                            if ($agg && $agg['total'] > 0) {
+                                $subGrade = $gradeScale(($agg['obtained'] / $agg['total']) * 100);
+                            }
+                        @endphp
                         <td class="py-2 px-1 text-center border-b border-r border-gray-200 dark:border-gray-700">
-                            @if($mark)
+                            @if($agg)
                             <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">
-                                {{ $mark->marks_obtained }}
+                                {{ $agg['obtained'] }}
+                                @if(count($examTypes) > 1)
+                                <span class="text-xs font-normal text-gray-400">/ {{ $agg['total'] }}</span>
+                                @endif
                             </div>
-                            <span class="inline-block text-xs px-1 py-0 rounded font-semibold leading-5 {{ $gradeColor($mark->grade ?? 'F') }}">
-                                {{ $mark->grade ?? 'â€”' }}
-                            </span>
-                            @can('marks.edit')
-                            <a href="{{ route('marks.edit', $mark) }}"
+                            @if($subGrade)
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ $subGrade }}</span>
+                            @endif
+                            @can('marks.entry')
+                            <a href="{{ route('marks.entry.form') }}?class_id={{ $selection['class_id'] }}&term={{ urlencode($selection['term']) }}&academic_year={{ urlencode($selection['academic_year']) }}"
                                class="block text-center text-blue-400 hover:text-blue-600 leading-none mt-0.5"
-                               title="Edit">
+                               title="Edit in entry form">
                                 <i class="fas fa-pencil-alt" style="font-size:9px"></i>
                             </a>
                             @endcan
@@ -253,6 +248,7 @@
                             <span class="text-gray-300 dark:text-gray-600">&mdash;</span>
                             @endif
                         </td>
+
                         @endforeach
                         {{-- Total obtained / total possible --}}
                         <td class="py-2 px-2 text-center border-b border-r border-gray-200 dark:border-gray-700">
@@ -274,9 +270,7 @@
                         {{-- Final grade (based on average) --}}
                         <td class="py-2 px-2 text-center border-b border-gray-200 dark:border-gray-700">
                             @if($rowGrade)
-                            <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $gradeColor($rowGrade) }}">
-                                {{ $rowGrade }}
-                            </span>
+                            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $rowGrade }}</span>
                             @else
                             <span class="text-gray-300 dark:text-gray-600">&mdash;</span>
                             @endif
