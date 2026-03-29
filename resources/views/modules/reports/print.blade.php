@@ -21,6 +21,7 @@
             background: #fff;
             padding: 20mm 18mm;
             box-shadow: 0 2px 16px rgba(0,0,0,.12);
+            border: 1px solid #d1d5db;
         }
 
         /* ---- Header ---- */
@@ -49,27 +50,13 @@
             display: inline-block;
             margin-top: 6px;
             border: 1px solid #374151;
-            color: #374151;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 4px 16px;
-            border-radius: 12px;
-        }
-            color: #374151;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 4px 16px;
-            border-radius: 12px;
         }
 
         /* ---- Student Info ---- */
         .student-section {
             display: flex;
             align-items: stretch;
+            flex-wrap: nowrap;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             overflow: hidden;
@@ -143,7 +130,7 @@
             color: #374151;
             margin-bottom: 8px;
         }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #e5e7eb; }
         thead th {
             background: #374151;
             color: #fff;
@@ -153,7 +140,10 @@
             letter-spacing: .8px;
             padding: 8px 10px;
             text-align: left;
+            border-right: 1px solid #e5e7eb;
         }
+        thead th:last-child { border-right: none; }
+        tbody td { border: 1px solid #e5e7eb; }
         thead th.center { text-align: center; }
         tbody tr:nth-child(even) { background: #f9fafb; }
         tbody td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
@@ -260,7 +250,7 @@
                 setTimeout(function () { window.print(); }, 400);
             });
         }
-    <\/script>
+    </script>
 
         {{-- School Header --}}
         <div class="header">
@@ -289,9 +279,8 @@
         <hr class="header-rule">
         <hr class="header-rule-2">
 
-        {{-- Student Info: details left | title centre | photo right --}}
+        {{-- Student Info: details | REPORT CARD title | photo (no-wrap) --}}
         <div class="student-section">
-            {{-- Left: compact label: value rows --}}
             <div class="student-details">
                 <div class="info-row">
                     <span class="info-label">Name</span>
@@ -310,11 +299,11 @@
                     <span class="info-value">: {{ $report->term }}, {{ $report->academic_year }}</span>
                 </div>
             </div>
-            {{-- Centre: Report Card title --}}
+
             <div class="student-title">
-                <div class="rc-heading">Report<br>Card</div>
+                <div class="rc-heading">Report Card</div>
             </div>
-            {{-- Right: photo --}}
+
             <div class="student-photo">
                 @if($report->student->photo)
                 <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo">

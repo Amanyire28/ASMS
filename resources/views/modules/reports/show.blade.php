@@ -51,7 +51,7 @@
     @endif
 
     {{-- Report Card --}}
-    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white shadow-sm rounded-xl border-2 border-gray-300 overflow-hidden">
 
         {{-- School Header --}}
         <div class="px-6 pt-6 pb-4 text-center">
@@ -90,11 +90,9 @@
 
         <div class="p-6 space-y-6">
 
-            {{-- Student Info: details left | title centre | photo right --}}
-            <div class="flex items-stretch gap-0 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-
-                {{-- Left: compact label: value rows --}}
-                <div class="flex-1 flex flex-col justify-center gap-1.5 px-5 py-4">
+            {{-- Student Info: details | REPORT CARD title | photo (no-wrap) --}}
+            <div class="flex items-stretch gap-0 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex-nowrap">
+                <div class="flex-1 flex flex-col justify-center gap-1.5 px-5 py-4 min-w-0">
                     <div class="flex items-baseline gap-1 text-sm">
                         <span class="font-semibold text-gray-500 shrink-0 w-20 text-xs uppercase">Name</span>
                         <span class="font-bold text-gray-900">: {{ $report->student->full_name }}</span>
@@ -112,14 +110,13 @@
                         <span class="font-bold text-gray-900">: {{ $report->term }}, {{ $report->academic_year }}</span>
                     </div>
                 </div>
-
-                {{-- Centre: Report Card title --}}
-                <div class="flex flex-col items-center justify-center text-center border-x border-gray-300 px-6 py-4">
-                    <span class="text-2xl font-black uppercase tracking-widest text-gray-800 leading-tight">Report<br>Card</span>
+                {{-- Centre title column --}}
+                <div class="flex-none flex flex-col items-center justify-center px-6 py-4 border-x border-gray-300 min-w-[160px]">
+                    <span class="text-2xl font-black uppercase tracking-widest text-gray-800 leading-tight">Report Card</span>
                 </div>
 
-                {{-- Right: profile photo --}}
-                <div class="flex flex-col items-center justify-center px-5 py-3">
+                {{-- Right: profile photo (fixed width) --}}
+                <div class="flex-none flex flex-col items-center justify-center px-5 py-3 min-w-[92px]">
                     @if($report->student->photo)
                     <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo"
                          class="h-24 w-20 object-cover rounded border-2 border-gray-300 shadow-sm">
@@ -132,7 +129,6 @@
                     @endif
                     <p class="text-xs text-gray-400 mt-1">Photo</p>
                 </div>
-
             </div>
 
             {{-- Marks Table --}}
