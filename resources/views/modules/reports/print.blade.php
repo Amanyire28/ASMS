@@ -68,29 +68,50 @@
 
         /* ---- Student Info ---- */
         .student-section {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 14px;
-            background: #f8fafc;
+            display: flex;
+            align-items: stretch;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            padding: 12px 14px;
+            overflow: hidden;
+            background: #f8fafc;
             margin-bottom: 18px;
         }
         .student-details {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            justify-content: center;
+            gap: 5px;
+            padding: 10px 14px;
         }
+        .info-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 11.5px;
+        }
+        .info-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            width: 54px;
+            flex-shrink: 0;
+        }
+        .info-value { font-size: 11.5px; font-weight: 700; color: #111827; }
         .student-title {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
             border-left: 1px solid #d1d5db;
             border-right: 1px solid #d1d5db;
-            padding: 8px 18px;
+            padding: 8px 20px;
         }
         .student-title .rc-heading {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 3px;
@@ -104,16 +125,14 @@
             letter-spacing: 1px;
             margin-top: 4px;
         }
-        .student-photo { text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .student-photo img { width: 80px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; }
+        .student-photo { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 14px; }
+        .student-photo img { width: 72px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db; }
         .student-photo .photo-initials {
-            width: 80px; height: 100px; background: #dbeafe; color: #1d4ed8;
+            width: 72px; height: 90px; background: #dbeafe; color: #1d4ed8;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 4px; font-size: 24px; font-weight: 700; border: 1px solid #bfdbfe;
+            border-radius: 4px; font-size: 22px; font-weight: 700; border: 1px solid #bfdbfe;
         }
-        .student-photo .photo-label { font-size: 9px; color: #9ca3af; margin-top: 3px; }
-        .info-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .7px; }
-        .info-value { font-size: 13px; font-weight: 600; color: #111827; margin-top: 2px; }
+        .student-photo .photo-label { font-size: 9px; color: #9ca3af; margin-top: 3px; text-align: center; }
 
         /* ---- Marks Table ---- */
         .section-title {
@@ -273,23 +292,23 @@
 
         {{-- Student Info: details left | title centre | photo right --}}
         <div class="student-section">
-            {{-- Left: student details stacked --}}
+            {{-- Left: compact label: value rows --}}
             <div class="student-details">
-                <div>
-                    <div class="info-label">Student Name</div>
-                    <div class="info-value">{{ $report->student->full_name }}</div>
+                <div class="info-row">
+                    <span class="info-label">Name</span>
+                    <span class="info-value">: {{ $report->student->full_name }}</span>
                 </div>
-                <div>
-                    <div class="info-label">Student ID</div>
-                    <div class="info-value">{{ $report->student->student_id }}</div>
+                <div class="info-row">
+                    <span class="info-label">ID</span>
+                    <span class="info-value">: {{ $report->student->student_id }}</span>
                 </div>
-                <div>
-                    <div class="info-label">Class</div>
-                    <div class="info-value">{{ $report->student->class->name ?? 'N/A' }}</div>
+                <div class="info-row">
+                    <span class="info-label">Class</span>
+                    <span class="info-value">: {{ $report->student->class->name ?? 'N/A' }}</span>
                 </div>
-                <div>
-                    <div class="info-label">Term / Year</div>
-                    <div class="info-value">{{ $report->term }}, {{ $report->academic_year }}</div>
+                <div class="info-row">
+                    <span class="info-label">Term</span>
+                    <span class="info-value">: {{ $report->term }}, {{ $report->academic_year }}</span>
                 </div>
             </div>
             {{-- Centre: Report Card title --}}

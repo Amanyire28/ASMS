@@ -96,46 +96,44 @@
         <div class="p-6 space-y-6">
 
             {{-- Student Info: details left | title centre | photo right --}}
-            <div class="grid grid-cols-3 gap-4 bg-gray-50 rounded-lg p-4 border border-gray-200 items-center">
+            <div class="flex items-stretch gap-0 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
 
-                {{-- Left: student details stacked in one column --}}
-                <div class="flex flex-col gap-2">
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student Name</p>
-                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->full_name }}</p>
+                {{-- Left: compact label: value rows --}}
+                <div class="flex-1 flex flex-col justify-center gap-1.5 px-5 py-4">
+                    <div class="flex items-baseline gap-1 text-sm">
+                        <span class="font-semibold text-gray-500 shrink-0 w-20 text-xs uppercase">Name</span>
+                        <span class="font-bold text-gray-900">: {{ $report->student->full_name }}</span>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Student ID</p>
-                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->student_id }}</p>
+                    <div class="flex items-baseline gap-1 text-sm">
+                        <span class="font-semibold text-gray-500 shrink-0 w-20 text-xs uppercase">ID</span>
+                        <span class="font-bold text-gray-900">: {{ $report->student->student_id }}</span>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Class</p>
-                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->student->class->name ?? 'N/A' }}</p>
+                    <div class="flex items-baseline gap-1 text-sm">
+                        <span class="font-semibold text-gray-500 shrink-0 w-20 text-xs uppercase">Class</span>
+                        <span class="font-bold text-gray-900">: {{ $report->student->class->name ?? 'N/A' }}</span>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Term / Year</p>
-                        <p class="text-sm font-semibold text-gray-900 mt-0.5">{{ $report->term }}, {{ $report->academic_year }}</p>
+                    <div class="flex items-baseline gap-1 text-sm">
+                        <span class="font-semibold text-gray-500 shrink-0 w-20 text-xs uppercase">Term</span>
+                        <span class="font-bold text-gray-900">: {{ $report->term }}, {{ $report->academic_year }}</span>
                     </div>
                 </div>
 
-                {{-- Centre: report card label --}}
-                <div class="flex flex-col items-center justify-center text-center border-x border-gray-300 px-4 py-2">
-                    <span class="text-lg font-extrabold uppercase tracking-widest text-gray-800 leading-tight">
-                        Report<br>Card
-                    </span>
-                    <div class="mt-2 text-xs text-gray-500 font-medium uppercase tracking-wide">
+                {{-- Centre: Report Card title --}}
+                <div class="flex flex-col items-center justify-center text-center border-x border-gray-300 px-6 py-4">
+                    <span class="text-2xl font-black uppercase tracking-widest text-gray-800 leading-tight">Report<br>Card</span>
+                    <div class="mt-1 text-xs text-gray-400 font-medium uppercase tracking-wide">
                         {{ ucwords(str_replace('_', ' ', $report->report_type)) }}
                     </div>
                 </div>
 
                 {{-- Right: profile photo --}}
-                <div class="flex flex-col items-center justify-center">
+                <div class="flex flex-col items-center justify-center px-5 py-3">
                     @if($report->student->photo)
                     <img src="{{ asset('storage/' . $report->student->photo) }}" alt="Student Photo"
-                         class="h-28 w-24 object-cover rounded-lg border-2 border-gray-300 shadow-sm">
+                         class="h-24 w-20 object-cover rounded border-2 border-gray-300 shadow-sm">
                     @else
-                    <div class="h-28 w-24 rounded-lg bg-blue-100 flex items-center justify-center border-2 border-gray-300">
-                        <span class="text-blue-700 font-bold text-2xl">
+                    <div class="h-24 w-20 rounded bg-blue-100 flex items-center justify-center border-2 border-gray-300">
+                        <span class="text-blue-700 font-bold text-xl">
                             {{ strtoupper(substr($report->student->first_name, 0, 1) . substr($report->student->last_name, 0, 1)) }}
                         </span>
                     </div>
