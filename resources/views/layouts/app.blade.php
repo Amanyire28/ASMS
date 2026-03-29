@@ -47,6 +47,9 @@
 
             .main-content-area {
                 flex: 1;
+                min-width: 0;
+                max-width: 100%;
+                overflow-x: hidden;
                 margin-left: 256px;
                 transition: margin-left 0.3s ease;
                 display: flex;
@@ -212,7 +215,7 @@
             </div>
 
             <!-- Page Content -->
-            <main class="p-4 sm:p-6 lg:p-8 flex-1">
+            <main class="p-4 sm:p-6 lg:p-8 flex-1 min-w-0 overflow-x-hidden">
                 <div id="page-content" class="page-content">
                     @hasSection('content')
                         @yield('content')
