@@ -15,6 +15,7 @@ class Mark extends Model
         'class_id',
         'term',
         'academic_year',
+        'exam_type',
         'marks_obtained',
         'total_marks',
         'grade',
