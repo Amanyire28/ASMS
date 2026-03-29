@@ -164,7 +164,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                             @foreach($subjects as $subject)
-                            @php
+                                @php
                                 $subObt = 0; $subTot = 0;
                                 foreach ($examTypes as $et) {
                                     $mm = $marksGrouped[$subject->id][$et['id']] ?? null;
@@ -172,14 +172,8 @@
                                 }
                                 $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
                                 if ($subPct !== null) {
-                                    if ($subPct >= 90) $subGrade = 'A+';
-                                    elseif ($subPct >= 80) $subGrade = 'A';
-                                    elseif ($subPct >= 70) $subGrade = 'B+';
-                                    elseif ($subPct >= 60) $subGrade = 'B';
-                                    elseif ($subPct >= 50) $subGrade = 'C+';
-                                    elseif ($subPct >= 40) $subGrade = 'C';
-                                    elseif ($subPct >= 30) $subGrade = 'D';
-                                    else $subGrade = 'F';
+                                    $g = grade_info($subPct);
+                                    $subGrade = $g['grade'] ?? null;
                                 } else { $subGrade = null; }
                                 $firstMark = collect($marksGrouped[$subject->id] ?? [])->first();
                                 $remarks   = $firstMark->remarks ?? null;

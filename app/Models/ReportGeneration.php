@@ -73,14 +73,8 @@ class ReportGeneration extends Model
 
     private function calculateGrade($percentage)
     {
-        if ($percentage >= 90) return 'A+';
-        if ($percentage >= 80) return 'A';
-        if ($percentage >= 70) return 'B+';
-        if ($percentage >= 60) return 'B';
-        if ($percentage >= 50) return 'C+';
-        if ($percentage >= 40) return 'C';
-        if ($percentage >= 30) return 'D';
-        return 'F';
+        $info = grade_info($percentage);
+        return $info['grade'] ?? 'F';
     }
 
     public static function generateReportNumber()

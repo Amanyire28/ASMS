@@ -316,6 +316,24 @@
                 </div>
             </div>
 
+            {{-- Admin-configurable grade thresholds --}}
+            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 class="text-sm font-semibold text-gray-800 mb-2">Grade Thresholds (Admin)</h3>
+                <p class="text-xs text-gray-500 mb-3">Set the minimum percentage for each grade. Values must be integers between 0 and 100.</p>
+                @php $gt = json_decode($reportSettings['grade_thresholds'] ?? 'null', true) ?? []; @endphp
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    @foreach(['A','B','C','D'] as $g)
+                    <div>
+                        <label class="text-xs font-medium text-gray-700">Grade {{ $g }} (min %)</label>
+                        <input type="number" name="grade_thresholds[{{ $g }}]" min="0" max="100" step="1"
+                               value="{{ old('grade_thresholds.'.$g, $gt[$g] ?? '') }}"
+                               class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+                    </div>
+                    @endforeach
+                </div>
+                <p class="text-xs text-gray-400 mt-2">If left empty, system defaults will be used: A &ge;70, B &ge;60, C &ge;50, D &ge;40.</p>
+            </div>
+
             {{-- Submit --}}
             <div class="flex justify-end pt-2">
                 <button type="submit"

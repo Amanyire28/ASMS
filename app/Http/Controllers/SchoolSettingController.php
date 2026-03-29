@@ -247,6 +247,11 @@ class SchoolSettingController extends Controller
             'principal_name' => 'required|string|max:255',
             'principal_signature' => 'nullable|image|mimes:png,jpg,jpeg|max:1024', // 1MB max
             'headteacher_signature' => 'nullable|image|mimes:png,jpg,jpeg|max:1024',
+            'grade_thresholds' => 'nullable|array',
+            'grade_thresholds.A' => 'nullable|integer|min:0|max:100',
+            'grade_thresholds.B' => 'nullable|integer|min:0|max:100',
+            'grade_thresholds.C' => 'nullable|integer|min:0|max:100',
+            'grade_thresholds.D' => 'nullable|integer|min:0|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -288,6 +293,13 @@ class SchoolSettingController extends Controller
         SchoolSetting::set('letterhead_text', $request->letterhead_text, 'text', 'report');
         SchoolSetting::set('report_footer_text', $request->report_footer_text, 'text', 'report');
         SchoolSetting::set('principal_name', $request->principal_name, 'text', 'report');
+
+        // Save grade thresholds if provided (store as JSON)
+        if ($request->has('grade_thresholds')) {
+            $gt = array_filter($request->grade_thresholds, fn($v) => $v !== null && $v !== '');
+            // ensure keys A,B,C,D exist if possible
+            SchoolSetting::set('grade_thresholds', $gt ?: null, 'json', 'report', 'Grade thresholds (A,B,C,D)');
+        }
 
         return back()->with('success', 'Report card settings updated successfully!');
     }
