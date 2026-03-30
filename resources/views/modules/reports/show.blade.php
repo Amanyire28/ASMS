@@ -1,76 +1,49 @@
-@if(!request()->header('HX-Request'))
 @extends('layouts.app')
-@section('title', 'Report Card - ' . $report->report_number)
-                                @foreach($examTypes as $et)
-                                <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase leading-tight">
-                                    {{ $et['label'] }}<br>
-                                    <span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] }}</span>
-                                </th>
-                                @endforeach
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Average</th>
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total/100</th>
-                                @if($showTotal)
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total</th>
-                                @endif
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Achievement</th>
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Initial</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div>
-                <h1 class="text-xl font-bold text-gray-900">{{ $report->report_number }}</h1>
-                <p class="text-sm text-gray-500">{{ ucwords(str_replace('_', ' ', $report->report_type)) }} &mdash; {{ $report->term }}, {{ $report->academic_year }}</p>
-            </div>
+@section('title', 'Report Card - ' . ($report->report_number ?? 'Report'))
+@section('content')
+
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white p-6 rounded shadow">
+        <h1 class="text-lg font-bold">Report: {{ $report->report_number ?? 'N/A' }}</h1>
+        <p class="text-sm text-gray-600">Student: {{ $report->student->full_name ?? 'N/A' }}</p>
+        <p class="mt-4 text-gray-700">Simplified report view (temporary). Rebuilding full view.</p>
+    </div>
+</div>
+
+{{-- Header: back, title, actions --}}
+<div class="mb-6">
+    <div class="flex items-center justify-between">
+        <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-2 text-sm text-gray-600 hover:underline">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+
+        <div class="text-center">
+            <h1 class="text-xl font-bold text-gray-900">{{ $report->report_number }}</h1>
+            <p class="text-sm text-gray-500">{{ ucwords(str_replace('_', ' ', $report->report_type)) }} &mdash; {{ $report->term }}, {{ $report->academic_year }}</p>
         </div>
+
         <div class="flex items-center gap-2">
             <a href="{{ route('reports.print', $report) }}" target="_blank"
                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors">
-                                $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
-                                if ($subPct !== null) {
-                                    $g = grade_info($subPct);
-                                    $subGrade = $g['grade'] ?? null;
-                                    $subAchievement = $g['achievement'] ?? null;
-                                    $subInitial = $g['initial'] ?? null;
-                                } else { $subGrade = $subAchievement = $subInitial = null; }
+                <i class="fas fa-print"></i> Print
             </a>
             @canany('reports.delete')
-            <form action="{{ route('reports.destroy', $report) }}" method="POST"
-                  onsubmit="return confirm('Delete this report?')">
+            <form action="{{ route('reports.destroy', $report) }}" method="POST" onsubmit="return confirm('Delete this report?')">
                 @csrf @method('DELETE')
-                <button type="submit"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors">
                     <i class="fas fa-trash"></i> Delete
                 </button>
-                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
-                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $subPct !== null ? round($subPct,1) . ' / 100' : '-' }}</td>
-                                @if($showTotal)
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}</td>
-                                @endif
-                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '-' }}</td>
-                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $subAchievement ?? '-' }}</td>
-                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $subInitial ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '-' }}</td>
+            </form>
+            @endcanany
+        </div>
     </div>
-    @endif
-
-    {{-- Report Card --}}
+</div>
+<div class="container mx-auto px-4">
     <div class="bg-white shadow-sm rounded-xl border-2 border-gray-300 overflow-hidden">
 
         {{-- School Header --}}
         <div class="px-6 pt-6 pb-4 text-center">
-                                <td class="px-3 py-3 text-center text-gray-400">-</td>
-                $logoLeft  = school_setting('logo_left_text');
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}%</td>
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ round($summary['average_percentage'],1) }} / 100</td>
-                                @if($showTotal)
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}</td>
-                                @endif
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['grade'] }}</td>
-                                @php $sumInfo = grade_info($summary['average_percentage']); @endphp
-                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $sumInfo['achievement'] ?? '-' }}</td>
-                                <td class="px-3 py-3 text-center text-sm text-gray-700">{{ $sumInfo['initial'] ?? '-' }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subject(s)</td>
+            @php $logoLeft = school_setting('logo_left_text'); $logoRight = school_setting('logo_right_text'); @endphp
             <div class="flex items-center justify-center gap-3">
                 <h2 class="text-xl font-bold tracking-wide text-gray-900">{{ $logoLeft }}</h2>
                 <div class="shrink-0">
@@ -157,13 +130,11 @@
                                 @foreach($examTypes as $et)
                                 <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase leading-tight">
                                     {{ $et['label'] }}<br>
-                                    <span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] }}</span>
+                                    <span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] ?? 100 }}</span>
                                 </th>
                                 @endforeach
-                                @if($showTotal)
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total</th>
-                                @endif
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">%</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Average</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total/100</th>
                                 <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
                             </tr>
@@ -187,18 +158,47 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $subject->name }}</td>
                                 @foreach($examTypes as $et)
+                                @php
+                                    // collect exam marks and compute percentages per exam type
+                                    $examMarks = [];
+                                    foreach ($examTypes as $i => $et2) {
+                                        $mm2 = $marksGrouped[$subject->id][$et2['id']] ?? null;
+                                        if ($mm2) {
+                                            $obt = (float)$mm2->marks_obtained;
+                                            $max = !empty($et2['max_marks']) ? (float)$et2['max_marks'] : ((float)$mm2->total_marks ?: 100);
+                                            $examMarks[] = ['obt' => $obt, 'max' => $max, 'pct' => $max > 0 ? ($obt / $max * 100) : null];
+                                        } else {
+                                            $examMarks[] = ['obt' => null, 'max' => null, 'pct' => null];
+                                        }
+                                    }
+
+                                    // BOT = index 0, MOT = index 1, EOT = index 2 (fallback: use last two for average)
+                                    $bot = $examMarks[0]['pct'] ?? null;
+                                    $mot = $examMarks[1]['pct'] ?? null;
+                                    $eot = $examMarks[2]['pct'] ?? null;
+                                    if ($mot !== null && $eot !== null) {
+                                        $avg = round(($mot + $eot) / 2, 1);
+                                    } elseif ($mot !== null) {
+                                        $avg = round($mot, 1);
+                                    } elseif ($eot !== null) {
+                                        $avg = round($eot, 1);
+                                    } else {
+                                        $avg = null;
+                                    }
+
+                                    $botVal = $bot !== null ? round($bot, 1) : 0;
+                                    $total100 = $avg !== null ? round($botVal + $avg, 1) : ($bot !== null ? $botVal : null);
+                                    $gradeInfo = $total100 !== null ? grade_info($total100) : null;
+                                    $displayGrade = $gradeInfo['grade'] ?? ($subGrade ?? null);
+                                @endphp
+
+                                @foreach($examTypes as $et)
                                 @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
                                 <td class="px-3 py-3 text-center text-gray-700">{{ $mm !== null ? $mm->marks_obtained : '-' }}</td>
                                 @endforeach
-                                @if($showTotal)
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">
-                                    {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}
-                                </td>
-                                @endif
-                                <td class="px-3 py-3 text-center font-medium text-gray-700">
-                                    {{ $subPct !== null ? $subPct . '%' : '-' }}
-                                </td>
-                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '-' }}</td>
+                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $avg !== null ? $avg . '%' : '-' }}</td>
+                                <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $total100 !== null ? $total100 . ' / 100' : '-' }}</td>
+                                <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $displayGrade ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '-' }}</td>
                             </tr>
                             @endforeach
@@ -210,12 +210,8 @@
                                 @foreach($examTypes as $et)
                                 <td class="px-3 py-3 text-center text-gray-400">-</td>
                                 @endforeach
-                                @if($showTotal)
-                                <td class="px-3 py-3 text-center font-semibold text-gray-800">
-                                    {{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}
-                                </td>
-                                @endif
                                 <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}%</td>
+                                <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ round($summary['average_percentage'],1) }} / 100</td>
                                 <td class="px-3 py-3 text-center font-bold text-gray-900">{{ $summary['grade'] }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subject(s)</td>
                             </tr>
@@ -233,21 +229,21 @@
             {{-- Signatures --}}
             <div class="grid grid-cols-2 gap-8 pt-4 border-t border-gray-200">
                 <div class="text-center">
-                    @if(school_signature_url('principal'))
-                    <img src="{{ school_signature_url('principal') }}" alt="Principal Signature"
-                         class="h-14 mx-auto object-contain mb-2">
+                    @php $principalSig = school_signature_url('principal'); @endphp
+                    @if($principalSig)
+                        <img src="{{ e($principalSig) }}" alt="Principal Signature" class="h-14 mx-auto object-contain mb-2">
                     @else
-                    <div class="h-14 mb-2 border-b-2 border-gray-400 mx-8"></div>
+                        <div class="h-14 mb-2 border-b-2 border-gray-400 mx-8"></div>
                     @endif
                     <p class="text-sm font-semibold text-gray-800">{{ school_setting('principal_name', 'Principal') }}</p>
                     <p class="text-xs text-gray-500">Principal</p>
                 </div>
                 <div class="text-center">
-                    @if(school_signature_url('headteacher'))
-                    <img src="{{ school_signature_url('headteacher') }}" alt="Head Teacher Signature"
-                         class="h-14 mx-auto object-contain mb-2">
+                    @php $headSig = school_signature_url('headteacher'); @endphp
+                    @if($headSig)
+                        <img src="{{ e($headSig) }}" alt="Head Teacher Signature" class="h-14 mx-auto object-contain mb-2">
                     @else
-                    <div class="h-14 mb-2 border-b-2 border-gray-400 mx-8"></div>
+                        <div class="h-14 mb-2 border-b-2 border-gray-400 mx-8"></div>
                     @endif
                     <p class="text-sm font-semibold text-gray-800">Head Teacher</p>
                     <p class="text-xs text-gray-500">Class Teacher</p>
@@ -269,6 +265,4 @@
     </div>
 </div>
 
-@if(!request()->header('HX-Request'))
 @endsection
-@endif

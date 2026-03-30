@@ -327,10 +327,8 @@
                         <span style="font-weight:400;font-size:9px;color:#6b7280;">/ {{ $et['max_marks'] }}</span>
                     </th>
                     @endforeach
-                    @if($showTotal)
-                    <th class="center" style="min-width:65px;">Total</th>
-                    @endif
-                    <th class="center">%</th>
+                    <th class="center">Average</th>
+                    <th class="center">Total/100</th>
                     <th class="center">Grade</th>
                     <th>Remarks</th>
                 </tr>
@@ -353,18 +351,37 @@
                 @endphp
                 <tr>
                     <td>{{ $subject->name }}</td>
+                    @php
+                        // build exam percentages array similar to web view
+                        $examMarks2 = [];
+                        foreach ($examTypes as $i2 => $et2) {
+                            $mm2 = $marksGrouped[$subject->id][$et2['id']] ?? null;
+                            if ($mm2) {
+                                $obt2 = (float)$mm2->marks_obtained;
+                                $max2 = !empty($et2['max_marks']) ? (float)$et2['max_marks'] : ((float)$mm2->total_marks ?: 100);
+                                $examMarks2[] = ['obt' => $obt2, 'max' => $max2, 'pct' => $max2 > 0 ? ($obt2 / $max2 * 100) : null];
+                            } else { $examMarks2[] = ['obt' => null, 'max' => null, 'pct' => null]; }
+                        }
+                        $bot2 = $examMarks2[0]['pct'] ?? null;
+                        $mot2 = $examMarks2[1]['pct'] ?? null;
+                        $eot2 = $examMarks2[2]['pct'] ?? null;
+                        if ($mot2 !== null && $eot2 !== null) { $avg2 = round(($mot2 + $eot2) / 2, 1); }
+                        elseif ($mot2 !== null) { $avg2 = round($mot2,1); }
+                        elseif ($eot2 !== null) { $avg2 = round($eot2,1); }
+                        else { $avg2 = null; }
+                        $botVal2 = $bot2 !== null ? round($bot2,1) : 0;
+                        $total100_2 = $avg2 !== null ? round($botVal2 + $avg2,1) : ($bot2 !== null ? $botVal2 : null);
+                        $gradeInfo2 = $total100_2 !== null ? grade_info($total100_2) : null;
+                        $displayGrade2 = $gradeInfo2['grade'] ?? ($subGrade ?? null);
+                    @endphp
                     @foreach($examTypes as $et)
                     @php $mm = $marksGrouped[$subject->id][$et['id']] ?? null; @endphp
                     <td class="center">{{ $mm !== null ? $mm->marks_obtained : '-' }}</td>
                     @endforeach
-                    @if($showTotal)
-                    <td class="center" style="font-weight:600;">
-                        {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}
-                    </td>
-                    @endif
-                    <td class="center">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
+                    <td class="center">{{ $avg2 !== null ? $avg2 . '%' : '-' }}</td>
+                    <td class="center" style="font-weight:600;">{{ $total100_2 !== null ? $total100_2 . ' / 100' : '-' }}</td>
                     <td class="center">
-                        <span class="grade-badge">{{ $subGrade ?? '-' }}</span>
+                        <span class="grade-badge">{{ $displayGrade2 ?? '-' }}</span>
                     </td>
                     <td>{{ $remarks ?? '-' }}</td>
                 </tr>
@@ -376,12 +393,8 @@
                     @foreach($examTypes as $et)
                     <td class="center">-</td>
                     @endforeach
-                    @if($showTotal)
-                    <td class="center" style="font-weight:600;">
-                        {{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}
-                    </td>
-                    @endif
                     <td class="center">{{ $summary['average_percentage'] }}%</td>
+                    <td class="center" style="font-weight:600;">{{ round($summary['average_percentage'],1) }} / 100</td>
                     <td class="center">
                         <span class="total-grade">{{ $summary['grade'] }}</span>
                     </td>
