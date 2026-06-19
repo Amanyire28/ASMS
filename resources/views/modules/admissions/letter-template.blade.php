@@ -38,17 +38,6 @@
         <p style="margin: 1px 0 0 0; font-size: 10px; color: #6b7280;">{{ now()->format('d F Y') }}</p>
     </div>
 
-    {{-- Recipient Details --}}
-    <div style="margin-bottom: 8px; font-size: 11px;">
-        <p style="margin: 1px 0; font-weight: 600;">{{ $student->full_name }}</p>
-        @if($student->address)
-        <p style="margin: 1px 0;">{{ $student->address }}</p>
-        @endif
-        @if($student->parent_name)
-        <p style="margin: 1px 0;">c/o {{ $student->parent_name }}</p>
-        @endif
-    </div>
-
     {{-- Salutation --}}
     <div style="margin-bottom: 6px;">
         <p style="margin: 0; font-size: 11px;">Dear {{ $student->first_name }},</p>
@@ -63,40 +52,23 @@
         </p>
 
         {{-- Details Paragraph --}}
-        <p style="margin: 0 0 5px 0;">
+        <p style="margin: 0 0 4px 0;">
             Your admission details are as follows:
         </p>
 
-        {{-- Admission Details Box --}}
-        <div style="margin: 5px 8px 8px 8px; padding: 8px; background-color: #f0f4f8; border: 1px solid #d0dce6; border-radius: 2px; font-size: 10px;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;"><strong>Full Name:</strong></td>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;">{{ $student->full_name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;"><strong>Student ID:</strong></td>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;">{{ $student->student_id }}</td>
-                </tr>
-                @if($student->admission_number)
-                <tr>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;"><strong>Admission #:</strong></td>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;">{{ $student->admission_number }}</td>
-                </tr>
-                @endif
-                @if($student->class)
-                <tr>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;"><strong>Class:</strong></td>
-                    <td style="padding: 2px 0; border-bottom: 1px solid #e0e8f0;">{{ $student->class->name }}</td>
-                </tr>
-                @if($student->class->stream)
-                <tr>
-                    <td style="padding: 2px 0;"><strong>Stream:</strong></td>
-                    <td style="padding: 2px 0;">{{ $student->class->stream->name }}</td>
-                </tr>
-                @endif
-                @endif
-            </table>
+        {{-- Student Details (simple format) --}}
+        <div style="margin: 4px 0 6px 0; font-size: 11px; line-height: 1.4;">
+            <p style="margin: 1px 0;"><strong>Full Name:</strong> {{ $student->full_name }}</p>
+            <p style="margin: 1px 0;"><strong>Student ID:</strong> {{ $student->student_id }}</p>
+            @if($student->admission_number)
+            <p style="margin: 1px 0;"><strong>Admission Number:</strong> {{ $student->admission_number }}</p>
+            @endif
+            @if($student->class)
+            <p style="margin: 1px 0;"><strong>Class:</strong> {{ $student->class->name }}</p>
+            @if($student->class->stream)
+            <p style="margin: 1px 0;"><strong>Stream:</strong> {{ $student->class->stream->name }}</p>
+            @endif
+            @endif
         </div>
 
         {{-- Requirements Paragraph --}}
