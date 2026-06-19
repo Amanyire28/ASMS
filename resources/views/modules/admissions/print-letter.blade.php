@@ -13,7 +13,6 @@
         html, body {
             margin: 0;
             padding: 0;
-            height: 100%;
             background: #fff;
         }
         body {
@@ -24,22 +23,19 @@
         }
         .page {
             width: 210mm;
-            height: 297mm;
             margin: 0 auto;
             padding: 15mm;
             background: white;
             box-shadow: none;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
         }
         .letter-content {
             font-size: 13px;
             line-height: 1.6;
         }
-        /* Ensure no widows/orphans and reduce spacing */
+        /* Prevent page breaks inside elements */
         p { page-break-inside: avoid; margin: 6px 0; }
         table { page-break-inside: avoid; }
+        div { page-break-inside: avoid; }
         
         @media print {
             * {
@@ -47,23 +43,22 @@
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
-            html, body {
-                width: 100%;
-                height: 100%;
+            html {
+                margin: 0;
+                padding: 0;
+            }
+            body {
                 margin: 0;
                 padding: 0;
                 background: white;
             }
             .page {
                 width: 100%;
-                height: 100%;
                 margin: 0;
                 padding: 15mm;
                 box-shadow: none;
                 page-break-after: avoid;
-            }
-            body, .page {
-                display: block !important;
+                page-break-inside: avoid;
             }
         }
     </style>
