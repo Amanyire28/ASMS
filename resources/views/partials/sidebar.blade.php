@@ -362,6 +362,84 @@
         </div>
         @endcanany
 
+        <!-- Fees Dropdown (Only if has permission) -->
+        @canany('system.settings')
+        <div class="relative">
+            <button @click="toggleDropdown('fees', $event)"
+                :class="{
+                    'bg-blue-700 !text-white font-semibold': isActive('/admin/fees'),
+                    'text-gray-900 hover:bg-blue-200': !isActive('/admin/fees')
+                }"
+                class="nav-link flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-coins w-5 text-center"></i>
+                    <span class="font-medium">Fees</span>
+                </div>
+                <i class="fas fa-chevron-down text-xs transition-transform duration-200"
+                   :class="dropdowns.fees ? 'rotate-180' : ''"></i>
+            </button>
+
+            <div x-show="dropdowns.fees" x-transition style="display: none;"
+                 class="ml-8 mt-1 space-y-1 bg-blue-100 rounded-lg p-2">
+
+                <a href="/admin/fees"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/fees')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-list w-4 text-center"></i>
+                    <span>Fees</span>
+                </a>
+
+                <a href="/admin/fees/schedules/view"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees/schedules/view'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/fees/schedules/view')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-calendar w-4 text-center"></i>
+                    <span>Schedules</span>
+                </a>
+
+                <a href="{{ route('fees.allocate-fees') }}"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isActive('fees/allocate-fees'),
+                       'text-gray-900 hover:bg-blue-200': !isActive('fees/allocate-fees')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-money-bill w-4 text-center"></i>
+                    <span>Allocate Fees</span>
+                </a>
+
+                <a href="/admin/fees/reports/collection"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees/reports/collection'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/fees/reports/collection')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-chart-bar w-4 text-center"></i>
+                    <span>Collection Report</span>
+                </a>
+
+                <a href="/admin/fees/reports/overdue"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees/reports/overdue'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/fees/reports/overdue')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-exclamation-circle w-4 text-center"></i>
+                    <span>Overdue Report</span>
+                </a>
+            </div>
+        </div>
+        @endcanany
+
        <!-- Settings (using your HEAD branch structure) -->
        @canany(['system.users', 'system.roles'])
         <a href="/admin/system"
@@ -451,6 +529,17 @@
            class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
             <i class="fas fa-file-alt text-xl"></i>
             <span class="sidebar-tooltip">Reports</span>
+        </a>
+        @endcanany
+
+        <!-- Fees Icon -->
+        @canany('system.settings')
+        <a href="/admin/fees"
+           @click="handleLinkClick()"
+           :class="{'bg-blue-700': isActive('/admin/fees')}"
+           class="nav-link-icon group relative flex justify-center p-3 rounded-lg transition-all text-gray-900 hover:bg-blue-200">
+            <i class="fas fa-coins text-xl"></i>
+            <span class="sidebar-tooltip">Fees</span>
         </a>
         @endcanany
 

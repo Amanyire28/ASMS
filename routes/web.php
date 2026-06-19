@@ -16,6 +16,7 @@ use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\SchoolSettingController;
+use App\Http\Controllers\FeesController;
 use App\Models\Teacher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -543,6 +544,96 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     Route::get('reports/{report}/print', [ReportController::class, 'print'])->name('reports.print');
     Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
     Route::get('api/students-by-class', [ReportController::class, 'getStudentsByClass'])->name('api.students-by-class');
+
+    // ========================================
+    // FEES MANAGEMENT ROUTES
+    // ========================================
+    
+    // Fees CRUD
+    Route::get('fees', [FeesController::class, 'index'])
+        ->middleware('permission:system.settings')
+        ->name('fees.index');
+    Route::get('fees/create', [FeesController::class, 'create'])
+        ->middleware('permission:system.settings')
+        ->name('fees.create');
+    Route::post('fees', [FeesController::class, 'store'])
+        ->middleware('permission:system.settings')
+        ->name('fees.store');
+    Route::get('fees/{fee}/edit', [FeesController::class, 'edit'])
+        ->middleware('permission:system.settings')
+        ->name('fees.edit');
+    Route::put('fees/{fee}', [FeesController::class, 'update'])
+        ->middleware('permission:system.settings')
+        ->name('fees.update');
+    Route::delete('fees/{fee}', [FeesController::class, 'destroy'])
+        ->middleware('permission:system.settings')
+        ->name('fees.destroy');
+
+    // Fee Schedules
+    Route::get('fees/schedules/view', [FeesController::class, 'schedules'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules');
+    Route::get('fees/schedules/create', [FeesController::class, 'createSchedule'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules.create');
+    Route::post('fees/schedules', [FeesController::class, 'storeSchedule'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules.store');
+    Route::get('fees/schedules/{schedule}/edit', [FeesController::class, 'editSchedule'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules.edit');
+    Route::put('fees/schedules/{schedule}', [FeesController::class, 'updateSchedule'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules.update');
+    Route::delete('fees/schedules/{schedule}', [FeesController::class, 'destroySchedule'])
+        ->middleware('permission:system.settings')
+        ->name('fees.schedules.destroy');
+
+    // Allocate Fees - Bursar records payments
+    Route::get('fees/allocate-fees', [FeesController::class, 'allocateFees'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.allocate-fees');
+    Route::get('fees/search-students', [FeesController::class, 'searchStudents'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.search-students');
+    Route::get('fees/allocate-fees/{student}', [FeesController::class, 'allocateFeesForStudent'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.allocate-for-student');
+    Route::post('fees/record-allocation', [FeesController::class, 'recordAllocation'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.record-allocation');
+
+    // Student Fees and Payments
+    Route::get('students/{student}/fees', [FeesController::class, 'studentFees'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.student');
+
+    Route::get('student-fees/{studentFee}/payment/record', [FeesController::class, 'recordPayment'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.payment.record');
+    Route::post('student-fees/{studentFee}/payment', [FeesController::class, 'storePayment'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.payment.store');
+
+    Route::get('payments/{payment}', [FeesController::class, 'viewPayment'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.payment.view');
+    Route::get('payments/{payment}/receipt', [FeesController::class, 'downloadReceipt'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.payment.receipt');
+
+    // Fee Reports
+    Route::get('fees/reports/overdue', [FeesController::class, 'overdueFeesReport'])
+        ->middleware('permission:system.settings')
+        ->name('fees.reports.overdue');
+    Route::get('fees/reports/collection', [FeesController::class, 'collectionReport'])
+        ->middleware('permission:system.settings')
+        ->name('fees.reports.collection');
+
+    // Student Account Statement
+    Route::get('students/{student}/statement', [FeesController::class, 'accountStatement'])
+        ->middleware('permission:students.view-detail')
+        ->name('fees.statement');
 
 
 });
