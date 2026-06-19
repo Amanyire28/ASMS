@@ -14,6 +14,8 @@
             margin: 0;
             padding: 0;
             background: #fff;
+            width: 100%;
+            height: auto;
         }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -27,15 +29,32 @@
             padding: 15mm;
             background: white;
             box-shadow: none;
+            display: block;
+            page-break-after: avoid;
+            page-break-inside: avoid;
         }
         .letter-content {
             font-size: 13px;
             line-height: 1.6;
+            width: 100%;
+            display: block;
         }
-        /* Prevent page breaks inside elements */
-        p { page-break-inside: avoid; margin: 6px 0; }
-        table { page-break-inside: avoid; }
-        div { page-break-inside: avoid; }
+        
+        /* Prevent page breaks inside critical elements */
+        .letter-content > div {
+            page-break-inside: avoid;
+            display: block;
+        }
+        
+        p { 
+            page-break-inside: avoid; 
+            margin: 6px 0;
+            display: block;
+        }
+        table { 
+            page-break-inside: avoid;
+            display: table;
+        }
         
         @media print {
             * {
@@ -43,22 +62,31 @@
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
-            html {
-                margin: 0;
-                padding: 0;
-            }
-            body {
-                margin: 0;
-                padding: 0;
-                background: white;
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
             }
             .page {
-                width: 100%;
-                margin: 0;
-                padding: 15mm;
-                box-shadow: none;
-                page-break-after: avoid;
-                page-break-inside: avoid;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 15mm !important;
+                box-shadow: none !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                display: block !important;
+            }
+            .letter-content {
+                display: block !important;
+                width: 100% !important;
+                background: white !important;
+                color: #333 !important;
+            }
+            body::before,
+            body::after {
+                display: none !important;
             }
         }
     </style>
@@ -68,10 +96,11 @@
         @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks, 'schoolSettings' => $schoolSettings])
     </div>
     <script>
-        window.addEventListener('load', function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure content is fully rendered before printing
             setTimeout(function() {
                 window.print();
-            }, 500);
+            }, 1000);
         });
     </script>
 </body>
