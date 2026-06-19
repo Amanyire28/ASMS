@@ -13,21 +13,6 @@
 
     {{-- Letter Display --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 min-h-screen">
-        {{-- Print Header --}}
-        <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Admission Letter</h1>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Student: <strong>{{ $letter->student->full_name }}</strong>
-                </p>
-            </div>
-            <div class="text-right">
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Generated: {{ $letter->generated_at->format('F d, Y \a\t h:i A') }}
-                </p>
-            </div>
-        </div>
-
         {{-- Letter Content --}}
         <div class="letter-preview mb-8" style="line-height: 1.8; font-size: 14px;">
             @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks, 'schoolSettings' => $schoolSettings])
