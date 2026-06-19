@@ -99,14 +99,6 @@
                 </tr>
                 @endif
                 @endif
-                <tr>
-                    <td style="padding: 8px 0;"><strong>Date of Birth:</strong></td>
-                    <td style="padding: 8px 0;">{{ $student->date_of_birth?->format('d F Y') ?? 'Not specified' }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0;"><strong>Admission Date:</strong></td>
-                    <td style="padding: 8px 0;">{{ $student->admission_date?->format('d F Y') ?? now()->format('d F Y') }}</td>
-                </tr>
             </table>
         </div>
 
