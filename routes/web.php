@@ -495,6 +495,10 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         Route::get('settings/report-card', [SchoolSettingController::class, 'editReportCardSettings'])
             ->name('settings.report-card');
 
+        // Dedicated admission letter settings page
+        Route::get('settings/admission-letter', [SchoolSettingController::class, 'editAdmissionLetterSettings'])
+            ->name('settings.admission-letter');
+
         // Update routes for each section
         Route::post('settings/school-profile/basic-info', [SchoolSettingController::class, 'updateBasicInfo'])
             ->name('settings.update-basic-info');
@@ -510,6 +514,9 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
 
         Route::post('settings/school-profile/report-card', [SchoolSettingController::class, 'updateReportCardSettings'])
             ->name('settings.update-report-card');
+
+        Route::post('settings/school-profile/admission-letter', [SchoolSettingController::class, 'updateAdmissionLetterSettings'])
+            ->name('settings.update-admission-letter');
 
         Route::post('settings/school-profile/exam-types', [SchoolSettingController::class, 'updateExamTypes'])
             ->name('settings.update-exam-types');

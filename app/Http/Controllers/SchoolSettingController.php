@@ -425,6 +425,47 @@ class SchoolSettingController extends Controller
     }
 
     /**
+     * Display admission letter settings page
+     */
+    public function editAdmissionLetterSettings()
+    {
+        abort_unless(auth()->user()->can('system.settings'), 403);
+
+        $admissionSettings = SchoolSetting::getByGroup('admission_letter')->pluck('value', 'key');
+
+        return view('modules.settings.admission-letter', compact('admissionSettings'));
+    }
+
+    /**
+     * Update admission letter settings
+     */
+    public function updateAdmissionLetterSettings(Request $request)
+    {
+        abort_unless(auth()->user()->can('system.settings'), 403);
+
+        $validator = Validator::make($request->all(), [
+            'admission_letter_opening' => 'required|string|max:1000',
+            'admission_letter_requirements' => 'required|string|max:1000',
+            'admission_letter_closing' => 'required|string|max:1000',
+            'admission_letter_contact_info' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', 'Please correct the errors in the Admission Letter Settings section.');
+        }
+
+        SchoolSetting::set('admission_letter_opening', $request->admission_letter_opening, 'textarea', 'admission_letter');
+        SchoolSetting::set('admission_letter_requirements', $request->admission_letter_requirements, 'textarea', 'admission_letter');
+        SchoolSetting::set('admission_letter_closing', $request->admission_letter_closing, 'textarea', 'admission_letter');
+        SchoolSetting::set('admission_letter_contact_info', $request->admission_letter_contact_info, 'text', 'admission_letter');
+
+        return back()->with('admission_success', 'Admission letter settings updated successfully!');
+    }
+
+    /**
      * Get list of countries
      */
     private function getCountries()

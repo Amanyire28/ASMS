@@ -33,10 +33,24 @@
     <hr style="border: none; border-top: 1px solid #6b7280; margin: 0 0 10px 0;">
 
     {{-- Admission Letter Title (Centered) --}}
-    <div style="text-align: center; margin-bottom: 12px;">
+    <div style="text-align: center; margin-bottom: 8px;">
         <h1 style="margin: 0; font-size: 14px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: 1px;">ADMISSION LETTER</h1>
-        <p style="margin: 1px 0 0 0; font-size: 10px; color: #6b7280;">{{ now()->format('d F Y') }}</p>
     </div>
+
+    {{-- Student Details (right after title) --}}
+    <div style="margin-bottom: 8px; padding: 6px 8px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 3px; font-size: 11px;">
+        <p style="margin: 1px 0;"><strong>Full Name:</strong> {{ $student->full_name }}</p>
+        <p style="margin: 1px 0;"><strong>Student ID:</strong> {{ $student->student_id }}</p>
+        @if($student->class)
+        <p style="margin: 1px 0;"><strong>Class:</strong> {{ $student->class->name }}</p>
+        @if($student->class->stream)
+        <p style="margin: 1px 0;"><strong>Stream:</strong> {{ $student->class->stream->name }}</p>
+        @endif
+        @endif
+    </div>
+
+    {{-- Date --}}
+    <p style="margin: 6px 0; font-size: 10px; color: #6b7280;">{{ now()->format('d F Y') }}</p>
 
     {{-- Salutation --}}
     <div style="margin-bottom: 6px;">
@@ -46,55 +60,33 @@
     {{-- Letter Body --}}
     <div style="margin-bottom: 10px; line-height: 1.4; font-size: 11px; color: #333;">
         
-        {{-- Opening Paragraph --}}
-        <p style="margin: 0 0 5px 0;">
-            We are delighted to inform you that you have been selected for admission to {{ $schoolSettings['school_name'] ?? 'our school' }}. This is a recognition of your academic excellence and the qualities we value in our students.
+        {{-- Opening Paragraph (from settings) --}}
+        <p style="margin: 0 0 8px 0;">
+            {{ $schoolSettings['admission_letter_opening'] ?? 'We are delighted to inform you that you have been selected for admission to ' . ($schoolSettings['school_name'] ?? 'our institution') . '. This is a recognition of your academic excellence and the qualities we value in our students.' }}
         </p>
 
-        {{-- Details Paragraph --}}
-        <p style="margin: 0 0 4px 0;">
-            Your admission details are as follows:
-        </p>
-
-        {{-- Student Details (simple format) --}}
-        <div style="margin: 4px 0 6px 0; font-size: 11px; line-height: 1.4;">
-            <p style="margin: 1px 0;"><strong>Full Name:</strong> {{ $student->full_name }}</p>
-            <p style="margin: 1px 0;"><strong>Student ID:</strong> {{ $student->student_id }}</p>
-            @if($student->admission_number)
-            <p style="margin: 1px 0;"><strong>Admission Number:</strong> {{ $student->admission_number }}</p>
-            @endif
-            @if($student->class)
-            <p style="margin: 1px 0;"><strong>Class:</strong> {{ $student->class->name }}</p>
-            @if($student->class->stream)
-            <p style="margin: 1px 0;"><strong>Stream:</strong> {{ $student->class->stream->name }}</p>
-            @endif
-            @endif
-        </div>
-
-        {{-- Requirements Paragraph --}}
+        {{-- Requirements Paragraph (from settings) --}}
         <p style="margin: 0 0 4px 0; font-weight: 600;">
             To finalize your admission:
         </p>
 
-        <div style="margin: 0 0 6px 0; padding-left: 12px; font-size: 10px;">
-            <p style="margin: 1px 0;">• Complete admission documentation</p>
-            <p style="margin: 1px 0;">• Submit certified academic records</p>
-            <p style="margin: 1px 0;">• Pay admission and registration fees</p>
+        <div style="margin: 0 0 8px 0; padding-left: 12px; font-size: 10px; white-space: pre-line;">
+            {{ $schoolSettings['admission_letter_requirements'] ?? "• Complete admission documentation\n• Submit certified academic records\n• Pay admission and registration fees" }}
         </div>
 
-        {{-- Contact Information Paragraph --}}
-        <p style="margin: 0 0 6px 0;">
-            Should you have any questions, please contact our admissions office. We look forward to welcoming you.
+        {{-- Closing Paragraph (from settings) --}}
+        <p style="margin: 0 0 8px 0;">
+            {{ $schoolSettings['admission_letter_closing'] ?? 'Should you have any questions, please contact our admissions office. We look forward to welcoming you.' }}
         </p>
 
         @if($remarks)
-        <p style="margin: 6px 0; padding: 5px; background-color: #fffbea; border-left: 3px solid #f59e0b; font-size: 10px;">
+        <p style="margin: 8px 0; padding: 5px; background-color: #fffbea; border-left: 3px solid #f59e0b; font-size: 10px;">
             <strong>Note:</strong> {{ $remarks }}
         </p>
         @endif
 
         {{-- Formal Closing --}}
-        <p style="margin: 6px 0 2px 0; font-size: 11px;">Yours sincerely,</p>
+        <p style="margin: 8px 0 2px 0; font-size: 11px;">Yours sincerely,</p>
 
     </div>
 
