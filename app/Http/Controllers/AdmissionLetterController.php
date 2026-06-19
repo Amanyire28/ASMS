@@ -27,6 +27,9 @@ class AdmissionLetterController extends Controller
             'school_phone' => SchoolSetting::get('school_phone'),
             'school_email' => SchoolSetting::get('school_email'),
             'school_address' => SchoolSetting::get('school_address'),
+            'logo_left_text' => SchoolSetting::get('logo_left_text'),
+            'logo_right_text' => SchoolSetting::get('logo_right_text'),
+            'letterhead_text' => SchoolSetting::get('letterhead_text'),
         ];
 
         return view('modules.admissions.generate-letter', compact('student', 'latestLetter', 'schoolSettings'));
@@ -54,6 +57,9 @@ class AdmissionLetterController extends Controller
                 'school_phone' => SchoolSetting::get('school_phone'),
                 'school_email' => SchoolSetting::get('school_email'),
                 'school_address' => SchoolSetting::get('school_address'),
+                'logo_left_text' => SchoolSetting::get('logo_left_text'),
+                'logo_right_text' => SchoolSetting::get('logo_right_text'),
+                'letterhead_text' => SchoolSetting::get('letterhead_text'),
             ];
 
             // Generate HTML content for the letter
@@ -94,6 +100,9 @@ class AdmissionLetterController extends Controller
             'school_phone' => SchoolSetting::get('school_phone'),
             'school_email' => SchoolSetting::get('school_email'),
             'school_address' => SchoolSetting::get('school_address'),
+            'logo_left_text' => SchoolSetting::get('logo_left_text'),
+            'logo_right_text' => SchoolSetting::get('logo_right_text'),
+            'letterhead_text' => SchoolSetting::get('letterhead_text'),
         ];
 
         return view('modules.admissions.view-letter', compact('letter', 'schoolSettings'));
@@ -147,6 +156,9 @@ class AdmissionLetterController extends Controller
             'school_phone' => SchoolSetting::get('school_phone'),
             'school_email' => SchoolSetting::get('school_email'),
             'school_address' => SchoolSetting::get('school_address'),
+            'logo_left_text' => SchoolSetting::get('logo_left_text'),
+            'logo_right_text' => SchoolSetting::get('logo_right_text'),
+            'letterhead_text' => SchoolSetting::get('letterhead_text'),
         ];
 
         return view('modules.admissions.print-letter', compact('letter', 'schoolSettings'));

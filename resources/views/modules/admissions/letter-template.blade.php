@@ -1,34 +1,41 @@
 {{-- This is the letter template content used for rendering --}}
 <div class="letter-content">
-    {{-- School Header --}}
-    <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1565C0; padding-bottom: 20px;">
+    {{-- School Header (same format as Report Card) --}}
+    <div style="text-align: center; margin-bottom: 10px;">
         @php
-            $logo = $schoolSettings['school_logo'] ?? null;
-            $schoolName = $schoolSettings['school_name'] ?? 'Academic School';
-            $schoolPhone = $schoolSettings['school_phone'] ?? '';
-            $schoolEmail = $schoolSettings['school_email'] ?? '';
-            $schoolAddress = $schoolSettings['school_address'] ?? '';
+            $logoLeft = $schoolSettings['logo_left_text'] ?? null;
+            $logoRight = $schoolSettings['logo_right_text'] ?? null;
+            $logoUrl = $schoolSettings['school_logo'] ?? null;
+            
+            if (!$logoLeft && !$logoRight) {
+                $nameParts = explode(' ', $schoolSettings['school_name'] ?? 'School Name', 2);
+                $logoLeft = $nameParts[0];
+                $logoRight = $nameParts[1] ?? '';
+            }
         @endphp
-
-        @if($logo)
-        <img src="{{ asset('storage/' . $logo) }}" alt="{{ $schoolName }}" 
-             style="height: 60px; margin-bottom: 10px;">
+        
+        {{-- Brand Line: Left Text | Logo | Right Text --}}
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 4px;">
+            <span style="font-size: 20px; font-weight: 700; color: #111827; letter-spacing: 0.5px;">{{ $logoLeft }}</span>
+            @if($logoUrl)
+            <img src="{{ asset('storage/' . $logoUrl) }}" alt="Logo" style="height: 64px; width: 64px; object-fit: contain;">
+            @endif
+            <span style="font-size: 20px; font-weight: 700; color: #111827; letter-spacing: 0.5px;">{{ $logoRight }}</span>
+        </div>
+        
+        {{-- Letterhead Details --}}
+        @if($schoolSettings['letterhead_text'])
+        <div style="font-size: 12px; color: #6b7280; margin-top: 4px; white-space: pre-line;">{{ $schoolSettings['letterhead_text'] }}</div>
         @endif
-
-        <h1 style="margin: 10px 0; color: #1565C0; font-size: 24px;">{{ $schoolName }}</h1>
-        <p style="margin: 5px 0; color: #666; font-size: 13px;">
-            {{ $schoolAddress }}
-        </p>
-        <p style="margin: 5px 0; color: #666; font-size: 12px;">
-            {{ $schoolPhone }}{{ $schoolEmail ? ' | ' . $schoolEmail : '' }}
-        </p>
     </div>
+    
+    <hr style="border: none; border-top: 2px solid #111827; margin: 0 0 3px 0;">
+    <hr style="border: none; border-top: 1px solid #6b7280; margin: 0 0 18px 0;">
 
-    {{-- Date and Reference --}}
-    <div style="margin-bottom: 30px;">
-        <p style="margin: 5px 0; color: #666; font-size: 12px;">
-            <strong>Date:</strong> {{ now()->format('d F Y') }}
-        </p>
+    {{-- Admission Letter Title (Centered) --}}
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: 2px;">ADMISSION LETTER</h1>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">{{ now()->format('F d, Y') }}</p>
     </div>
 
     {{-- Recipient Details --}}
