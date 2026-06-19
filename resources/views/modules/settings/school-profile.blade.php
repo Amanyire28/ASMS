@@ -58,6 +58,13 @@
                     <i class="fas fa-file-alt mr-2"></i>
                     Report
                 </button>
+
+                <button @click="activeTab = 'admission'"
+                        :class="activeTab === 'admission' ? 'border-maroon text-maroon dark:text-maroon-light' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-3 px-4 sm:py-4 sm:px-6 border-b-2 font-medium text-sm transition-all duration-200">
+                    <i class="fas fa-file-contract mr-2"></i>
+                    Admission Letters
+                </button>
             </nav>
         </div>
 
@@ -731,6 +738,32 @@
                             @endif
                         </div>
 </div>
+
+            <!-- ADMISSION LETTER SETTINGS TAB -->
+            <div x-show="activeTab === 'admission'" x-transition style="display: none;">
+                <div class="space-y-4 sm:space-y-6">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-file-contract text-maroon mr-2"></i>
+                            Admission Letter Template
+                        </h3>
+                    </div>
+
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                        <p class="text-sm text-blue-800 dark:text-blue-300">
+                            Customize the content and template of admission letters. Configure opening paragraphs, requirements, and closing statements.
+                        </p>
+                    </div>
+
+                    <div class="mt-6">
+                        <a href="{{ route('settings.admission-letter') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-maroon to-maroon-dark text-white font-semibold text-sm sm:text-base rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                            <i class="fas fa-cog mr-2"></i>
+                            Configure Admission Letters
+                        </a>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
