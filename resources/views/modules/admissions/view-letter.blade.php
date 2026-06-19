@@ -30,7 +30,7 @@
 
         {{-- Letter Content --}}
         <div class="letter-preview mb-8" style="line-height: 1.8; font-size: 14px;">
-            @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks])
+            @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks, 'schoolSettings' => $schoolSettings])
         </div>
 
         {{-- Action Buttons --}}

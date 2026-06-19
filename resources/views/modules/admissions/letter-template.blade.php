@@ -3,11 +3,11 @@
     {{-- School Header --}}
     <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1565C0; padding-bottom: 20px;">
         @php
-            $logo = school_setting('school_logo');
-            $schoolName = school_setting('school_name') ?? 'Academic School';
-            $schoolPhone = school_setting('school_phone') ?? '';
-            $schoolEmail = school_setting('school_email') ?? '';
-            $schoolAddress = school_setting('school_address') ?? '';
+            $logo = $schoolSettings['school_logo'] ?? null;
+            $schoolName = $schoolSettings['school_name'] ?? 'Academic School';
+            $schoolPhone = $schoolSettings['school_phone'] ?? '';
+            $schoolEmail = $schoolSettings['school_email'] ?? '';
+            $schoolAddress = $schoolSettings['school_address'] ?? '';
         @endphp
 
         @if($logo)
@@ -52,7 +52,7 @@
         
         {{-- Opening Paragraph --}}
         <p style="margin: 0 0 15px 0;">
-            We are delighted to inform you that you have been selected for admission to {{ school_setting('school_name') ?? 'our school' }}.
+            We are delighted to inform you that you have been selected for admission to {{ $schoolSettings['school_name'] ?? 'our school' }}.
             This is a recognition of your academic excellence, potential, and the qualities that we value in our students. 
             We are confident that you will make a positive contribution to our school community and that your time with us will be 
             enriching and memorable.

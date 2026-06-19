@@ -39,7 +39,7 @@
 </head>
 <body>
     <div class="container">
-        @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks])
+        @include('modules.admissions.letter-template', ['student' => $letter->student, 'remarks' => $letter->remarks, 'schoolSettings' => $schoolSettings])
     </div>
     <script>
         window.print();
