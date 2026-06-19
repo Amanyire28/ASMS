@@ -31,10 +31,15 @@
     @endif
 
     {{-- ── Step 1: Selector ─────────────────────────────── --}}
+    @php
+        $singleClass = $classes->count() === 1 ? $classes->first() : null;
+        $defaultClassId = old('class_id', $selection['class_id'] ?? ($singleClass ? $singleClass->id : ''));
+    @endphp
+
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6"
          x-data="{
              subsByClass: {{ Js::from($subjectsByClass) }},
-             selClass: '{{ $selection['class_id'] ?? '' }}',
+             selClass: '{{ $defaultClassId }}',
              selSub: '{{ $selection['subject_id'] ?? '' }}',
              get subjects() { return this.subsByClass[this.selClass] || []; }
          }">
@@ -52,6 +57,13 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Class <span class="text-red-500">*</span>
                     </label>
+                    @if($singleClass)
+                    <input type="hidden" name="class_id" value="{{ $singleClass->id }}">
+                    <div class="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
+                                bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-100">
+                        {{ $singleClass->name }}
+                    </div>
+                    @else
                     <select name="class_id" x-model="selClass" required
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
                                focus:ring-2 focus:ring-maroon focus:border-maroon dark:bg-gray-700 dark:text-white">
@@ -60,6 +72,7 @@
                         <option value="{{ $cls->id }}">{{ $cls->name }}</option>
                         @endforeach
                     </select>
+                    @endif
                 </div>
 
                 {{-- Term --}}
@@ -165,9 +178,28 @@
         Alpine.data('markRow', function() {
             return {
                 vals: {},
+                error: null,
                 init: function() {
                     var sid = this.$el.dataset.studentId;
                     this.vals = allInitVals[sid] || {};
+                },
+                validate: function(subId, etId, event) {
+                    var value = event.target.value;
+                    if (value === '' || value === null) {
+                        this.error = null;
+                        return;
+                    }
+                    var amount = parseFloat(value);
+                    var total = parseFloat(event.target.dataset.total || 0);
+                    if (isNaN(amount)) {
+                        this.error = 'Invalid number';
+                        return;
+                    }
+                    if (amount > total) {
+                        this.error = 'Cannot exceed ' + total + ' for this exam type.';
+                    } else {
+                        this.error = null;
+                    }
                 },
                 cellGrade: function(subId, etId) {
                     var v = (this.vals[subId] || {})[etId];
@@ -236,7 +268,7 @@
 
         <p class="text-sm text-gray-500 mb-5 ml-9">
             {{ $students->count() }} student(s) &middot;
-            Adjust <em>Out Of</em> in the column header if needed.
+            The <em>Out Of</em> value is fixed by the selected exam type.
         </p>
 
         @if($students->isEmpty())
@@ -272,14 +304,11 @@
                                 </div>
                                 <div class="mt-1 flex items-center justify-center gap-1">
                                     <span class="text-xs text-gray-400">Out&nbsp;of:</span>
-                                    <input type="number"
-                                        name="total[{{ $subject->id }}][{{ $etId }}]"
-                                        x-data
-                                        x-model.number="$store.marksTotals.totals['{{ $subject->id }}']['{{ $etId }}']"
-                                        min="1" max="1000" step="0.5"
-                                        class="w-16 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
-                                               text-xs text-center focus:ring-1 focus:ring-maroon focus:border-maroon
-                                               dark:bg-gray-700 dark:text-white font-normal">
+                                    <span class="w-16 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5
+                                               text-xs text-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold">
+                                        {{ $selectedExamType['max_marks'] }}
+                                    </span>
+                                    <input type="hidden" name="total[{{ $subject->id }}][{{ $etId }}]" value="{{ $selectedExamType['max_marks'] }}">
                                 </div>
                             </th>
                         </tr>
@@ -316,9 +345,13 @@
                                     name="marks[{{ $student->id }}][{{ $subject->id }}][{{ $etId }}]"
                                     x-model="vals['{{ $subject->id }}']['{{ $etId }}']"
                                     min="0" step="0.5" placeholder="&mdash;"
+                                    max="{{ $selectedExamType['max_marks'] }}"
+                                    data-total="{{ $selectedExamType['max_marks'] }}"
+                                    @input="validate('{{ $subject->id }}', '{{ $etId }}', $event)"
                                     class="w-24 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5
                                            text-sm text-center focus:ring-2 focus:ring-maroon focus:border-maroon
                                            dark:bg-gray-700 dark:text-white">
+                                <p x-show="error" x-text="error" class="mt-1 text-xs text-red-600"></p>
                                 <div class="text-xs font-semibold mt-1 h-4 leading-none whitespace-nowrap"
                                      :class="cellGradeClass('{{ $subject->id }}', '{{ $etId }}')"
                                      x-text="cellGrade('{{ $subject->id }}', '{{ $etId }}')">&mdash;</div>

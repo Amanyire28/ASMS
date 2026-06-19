@@ -9,7 +9,7 @@ use App\Http\Controllers\ClassCategoryController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\MarkController;
-
+use App\Http\Controllers\AdmissionLetterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PasswordChangeController;
@@ -46,16 +46,6 @@ Route::get('/dashboard', [HomeController::class, 'index'])
     ->middleware(['auth:sanctum', 'verified'])
     ->name('dashboard');
 
-// Profile & Settings (no special permission required, just auth)
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
-
-    Route::get('/settings', function () {
-        return redirect()->route('settings.school-profile');
-    })->name('settings');
-});
-
 // Password Change Routes (no permission required)
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/password/change', function () {
@@ -63,7 +53,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     })->name('password.change');
 
     Route::post('/password/change', [PasswordChangeController::class, 'update'])
-        ->name('password.update');
+        ->name('password.change.update');
 });
 
 Route::post('/logout', function () {
@@ -86,6 +76,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'verified'])->group(function
     Route::get('students/create', [StudentController::class, 'create'])
         ->middleware('permission:students.create')
         ->name('students.create');
+
+    Route::get('students/import', [StudentController::class, 'import'])
+        ->middleware('permission:students.create')
+        ->name('students.import');
+
+    Route::post('students/import', [StudentController::class, 'importSubmit'])
+        ->middleware('permission:students.create')
+        ->name('students.import.submit');
 
     Route::post('students', [StudentController::class, 'store'])
         ->middleware('permission:students.create')
@@ -119,6 +117,33 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     Route::delete('students/{student}', [StudentController::class, 'destroy'])
         ->middleware('permission:students.delete')
         ->name('students.destroy');
+
+    // ========================================
+    // ADMISSION LETTERS - Protected
+    // ========================================
+    Route::get('students/{student}/admission-letter/create', [AdmissionLetterController::class, 'create'])
+        ->middleware('permission:students.create')
+        ->name('admissions.letter.create');
+
+    Route::post('students/{student}/admission-letter/generate', [AdmissionLetterController::class, 'store'])
+        ->middleware('permission:students.create')
+        ->name('admissions.letter.store');
+
+    Route::get('admission-letters/{letter}', [AdmissionLetterController::class, 'show'])
+        ->middleware('permission:students.view-detail')
+        ->name('admissions.letter.view');
+
+    Route::get('admission-letters/{letter}/print', [AdmissionLetterController::class, 'print'])
+        ->middleware('permission:students.view-detail')
+        ->name('admissions.letter.print');
+
+    Route::delete('admission-letters/{letter}', [AdmissionLetterController::class, 'destroy'])
+        ->middleware('permission:students.delete')
+        ->name('admissions.letter.destroy');
+
+    Route::get('students/{student}/admission-letters', [AdmissionLetterController::class, 'studentLetters'])
+        ->middleware('permission:students.view-detail')
+        ->name('admissions.letters.student');
 
     // ========================================
     // TEACHER MANAGEMENT - Protected
@@ -404,6 +429,10 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
         ->middleware('permission:marks.entry')
         ->name('api.subjects-by-class');
 
+    Route::get('api/students-search', [MarkController::class, 'searchStudents'])
+        ->middleware('permission:marks.view')
+        ->name('api.students-search');
+
     Route::get('marks/{mark}/edit', [MarkController::class, 'edit'])
         ->middleware('permission:marks.edit')
         ->name('marks.edit');
@@ -493,11 +522,6 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
             ->name('settings.delete-signature');
     });
 
-    // Subject Management Routes
-    Route::resource('subjects', SubjectController::class);
-
-    Route::get('report-card/{student}', [MarkController::class, 'reportCard'])->name('report.card');
-
     // Announcement Management Routes
     Route::resource('announcements', AnnouncementController::class);
     Route::patch('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggle'])
@@ -518,14 +542,17 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
 
 // Notification Routes
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
-    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
-    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
-    Route::post('notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences.update');
+    // More specific routes first
     Route::get('notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unreadCount');
     Route::get('notifications/latest', [NotificationController::class, 'getLatest'])->name('notifications.latest');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::post('notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences.update');
+    
+    // Less specific routes last
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
 });
 
 // Custom Profile Routes (REPLACING Jetstream)

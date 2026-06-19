@@ -371,7 +371,7 @@ x-init="loadUnreadCount(); setInterval(() => { if (!document.hidden) loadUnreadC
                     @if(auth()->user()->profile_photo_path)
                         <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}"
                             alt="{{ auth()->user()->name }}"
-                            class="w-full h-full rounded-2xl object-cover">
+                            class="w-full h-full rounded-2xl object-cover"> 
                     @else
                         <span class="text-white font-bold text-sm">
                             {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}

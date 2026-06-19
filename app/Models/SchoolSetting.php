@@ -56,6 +56,38 @@ class SchoolSetting extends Model
     }
 
     /**
+     * Get configured exam types with normalization and default fallback.
+     *
+     * @return array
+     */
+    public static function examTypes(): array
+    {
+        $types = self::get('exam_types') ?? [];
+        if (empty($types)) {
+            return [[
+                'id' => 'Final',
+                'label' => 'Final Exam',
+                'max_marks' => 100,
+                'weight' => 100,
+                'order' => 1,
+            ]];
+        }
+
+        $normalized = [];
+        foreach ($types as $index => $type) {
+            $normalized[] = [
+                'id' => trim($type['id'] ?? 'Final'),
+                'label' => trim($type['label'] ?? 'Final Exam'),
+                'max_marks' => (float) ($type['max_marks'] ?? 100),
+                'weight' => isset($type['weight']) ? (float) $type['weight'] : 100,
+                'order' => isset($type['order']) ? (int) $type['order'] : $index + 1,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Set a setting value
      *
      * @param string $key

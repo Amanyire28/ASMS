@@ -208,3 +208,14 @@ if (!function_exists('grade_info')) {
         ];
     }
 }
+
+if (!function_exists('grade_remark')) {
+    /**
+     * Return a remark string based on percentage grade achievement.
+     */
+    function grade_remark($pct)
+    {
+        $info = grade_info($pct);
+        return $info['achievement'] ?? null;
+    }
+}

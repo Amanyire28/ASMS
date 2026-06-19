@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ReportGeneration;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\ClassModel;
 use App\Models\Mark;
@@ -82,10 +83,7 @@ class ReportController extends Controller
         $marks   = $report->getMarks();
         $summary = $report->calculateSummary($marks);
 
-        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
-        if (empty($examTypes)) {
-            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
-        }
+        $examTypes = SchoolSetting::examTypes();
         $marksGrouped = [];
         foreach ($marks as $m) {
             $marksGrouped[$m->subject_id][$m->exam_type ?? 'Final'] = $m;
@@ -101,10 +99,7 @@ class ReportController extends Controller
         $marks = $report->getMarks();
         $summary = $report->calculateSummary();
 
-        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
-        if (empty($examTypes)) {
-            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
-        }
+        $examTypes = SchoolSetting::examTypes();
         $marksGrouped = [];
         foreach ($marks as $m) {
             $marksGrouped[$m->subject_id][$m->exam_type ?? 'Final'] = $m;
@@ -175,11 +170,7 @@ class ReportController extends Controller
         $marks   = $report->getMarks();
         $summary = $report->calculateSummary($marks);
 
-        // Exam types from school settings (fallback to a single default)
-        $examTypes = \App\Models\SchoolSetting::get('exam_types') ?? [];
-        if (empty($examTypes)) {
-            $examTypes = [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
-        }
+        $examTypes = SchoolSetting::examTypes();
 
         // Unique subjects that appear in these marks
         $subjects = $marks->pluck('subject')->filter()->unique('id')->sortBy('name')->values();

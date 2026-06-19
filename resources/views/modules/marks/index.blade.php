@@ -98,9 +98,11 @@
         };
     @endphp
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden"
+         x-data="studentSearchData({ classId: {{ $class->id }}, apiUrl: '{{ route('api.students-search') }}' })"
+         @click.away="closeSuggestions()">
         <div class="flex items-start justify-between mb-4">
-            <div>
+            <div class="flex-1">
                 <h2 class="text-base font-semibold text-gray-900 dark:text-white flex items-center flex-wrap gap-1">
                     <span class="w-7 h-7 rounded-full bg-maroon text-white text-xs flex items-center justify-center font-bold flex-shrink-0">2</span>
                     Mark Sheet &mdash;
@@ -109,9 +111,36 @@
                     </span>
                 </h2>
                 <p class="text-sm text-gray-500 mt-1 ml-9">
-                    {{ $students->count() }} student(s) &middot; {{ $classSubjects->count() }} subject(s).
+                    <span x-show="!searchTerm">{{ $students->count() }} student(s)</span>
+                    <span x-show="searchTerm" x-text="suggestions.length + ' match(es) found'"></span>
+                    &middot; {{ $classSubjects->count() }} subject(s).
                     Final grade is based on the average across all subjects.
                 </p>
+            </div>
+            <div class="w-80 relative">
+                <label class="sr-only">Search students</label>
+                <input type="text" x-model="searchTerm" @input.debounce.300ms="fetchSuggestions()"
+                       placeholder="Search by ID or name…"
+                       class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm
+                              dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-maroon focus:border-maroon">
+                <div x-show="searchTerm && showDropdown" x-cloak
+                     class="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
+                    <template x-if="loading">
+                        <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Loading suggestions…</div>
+                    </template>
+                    <template x-if="!loading">
+                        <template x-for="student in suggestions" :key="student.id">
+                            <button type="button" @click="selectSuggestion(student)"
+                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-100">
+                                <span class="font-semibold" x-text="student.student_id"></span>
+                                <span class="ml-2 text-gray-500 dark:text-gray-400" x-text="student.name"></span>
+                            </button>
+                        </template>
+                        <div x-show="!suggestions.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                            No matching student IDs found.
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
 
@@ -128,6 +157,60 @@
             <p>No active students in this class.</p>
         </div>
         @else
+        <script>
+            function studentSearchData(config) {
+                return {
+                    searchTerm: '',
+                    suggestions: [],
+                    loading: false,
+                    showDropdown: false,
+                    apiUrl: config.apiUrl,
+                    classId: config.classId,
+
+                    async fetchSuggestions() {
+                        if (!this.searchTerm || this.searchTerm.length < 2) {
+                            this.suggestions = [];
+                            this.showDropdown = false;
+                            return;
+                        }
+
+                        this.loading = true;
+                        this.showDropdown = true;
+
+                        try {
+                            const url = new URL(this.apiUrl, window.location.origin);
+                            url.searchParams.set('q', this.searchTerm);
+                            url.searchParams.set('class_id', this.classId);
+
+                            const response = await fetch(url.toString(), {
+                                headers: { 'Accept': 'application/json' }
+                            });
+
+                            if (!response.ok) {
+                                this.suggestions = [];
+                                return;
+                            }
+
+                            const data = await response.json();
+                            this.suggestions = Array.isArray(data) ? data : [];
+                        } catch (error) {
+                            this.suggestions = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    selectSuggestion(student) {
+                        this.searchTerm = student.student_id;
+                        this.showDropdown = false;
+                    },
+
+                    closeSuggestions() {
+                        this.showDropdown = false;
+                    }
+                };
+            }
+        </script>
         <div id="marksheet-scroll"
              class="rounded-lg border border-gray-200 dark:border-gray-700"
              style="overflow-x:auto; overflow-y:auto; max-height:70vh; width:100%; cursor:grab;">
@@ -204,7 +287,9 @@
                         $rowBg    = $oddRow ? 'bg-gray-50/50 dark:bg-gray-800/60' : 'bg-white dark:bg-gray-800';
                         $stickyBg = $oddRow ? 'bg-gray-50 dark:bg-gray-800'       : 'bg-white dark:bg-gray-800';
                     @endphp
-                    <tr class="{{ $rowBg }} hover:bg-blue-50/40 dark:hover:bg-gray-750 transition-colors">
+                    <tr class="{{ $rowBg }} hover:bg-blue-50/40 dark:hover:bg-gray-750 transition-colors"
+                        x-show="!searchTerm || '{{ $student->student_id }}'.includes(searchTerm) || '{{ trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) }}'.toLowerCase().includes(searchTerm.toLowerCase())"
+                        style="display: table-row;">
                         {{-- # --}}
                         <td class="sticky left-0 z-10 {{ $stickyBg }} py-3 px-2 text-center text-xs text-gray-400
                                    border-b border-r border-gray-200 dark:border-gray-700">

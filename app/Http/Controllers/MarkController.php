@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mark;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -91,6 +92,11 @@ class MarkController extends Controller
         $examTypes       = $this->getExamTypes();
         $subjectsByClass = $this->buildSubjectsByClass($classes, $teacher);
 
+        // Teacher convenience: if exactly one class is assigned, preselect it.
+        if ($teacher && !$request->filled('class_id') && $classes->count() === 1) {
+            $request->merge(['class_id' => (string) $classes->first()->id]);
+        }
+
         // GET-based load — for "Next / Prev Subject" redirect after save
         if ($request->filled(['class_id', 'term', 'academic_year', 'exam_type_id', 'subject_id'])) {
             return $this->renderSubjectEntry($request, $classes, $terms, $years, $examTypes, $subjectsByClass);
@@ -117,6 +123,33 @@ class MarkController extends Controller
         }
 
         return response()->json($query->get(['subjects.id', 'subjects.name', 'subjects.code']));
+    }
+
+    public function searchStudents(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|max:50',
+            'class_id' => 'required|exists:classes,id',
+        ]);
+
+        $query = Student::where('class_id', $request->class_id)
+            ->where('is_active', true)
+            ->where(function ($sub) use ($request) {
+                $sub->where('student_id', 'like', '%' . $request->q . '%')
+                    ->orWhere('first_name', 'like', '%' . $request->q . '%')
+                    ->orWhere('last_name', 'like', '%' . $request->q . '%');
+            })
+            ->orderBy('first_name')
+            ->limit(10)
+            ->get(['id', 'student_id', 'first_name', 'last_name']);
+
+        return response()->json($query->map(function ($student) {
+            return [
+                'id' => $student->id,
+                'student_id' => $student->student_id,
+                'name' => trim($student->first_name . ' ' . $student->last_name),
+            ];
+        }));
     }
 
     // ──────────────────────────────────────────────────────────
@@ -161,6 +194,7 @@ class MarkController extends Controller
 
         // marks[studentId][subjectId][examTypeId] = obtained
         // total[subjectId][examTypeId]            = max_marks
+        $validationErrors = [];
         foreach ($request->marks as $studentId => $subjects) {
             foreach ($subjects as $subjectId => $examTypes) {
                 if (!is_array($examTypes)) {
@@ -174,8 +208,20 @@ class MarkController extends Controller
                         continue;
                     }
 
-                    $total    = (float) (($request->total[$subjectId][$examTypeId] ?? null) ?? ($request->total[$subjectId] ?? 100));
-                    $obtained = min((float) $obtained, $total);
+                    $total = (float) (($request->total[$subjectId][$examTypeId] ?? null) ?? ($request->total[$subjectId] ?? 100));
+                    $obtainedFloat = (float) $obtained;
+
+                    if ($obtainedFloat > $total + 0.0001) {
+                        // collect a clear error for this student/subject/exam
+                        $student = \App\Models\Student::find($studentId);
+                        $subject = \App\Models\Subject::find($subjectId);
+                        $studentName = $student ? trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) : "#{$studentId}";
+                        $subjectName = $subject ? $subject->name : "#{$subjectId}";
+                        $validationErrors[] = "Entered marks for {$studentName} in {$subjectName} ({$examTypeId}) exceed the configured total ({$obtainedFloat} &gt; {$total}).";
+                        continue;
+                    }
+
+                    $obtained = $obtainedFloat;
 
                     Mark::updateOrCreate(
                         [
@@ -195,6 +241,10 @@ class MarkController extends Controller
                     );
                 }
             }
+        }
+
+        if (!empty($validationErrors)) {
+            return back()->withInput()->withErrors($validationErrors)->with('error', 'Some marks exceed their configured totals.');
         }
 
         $nextSubjectId = $request->input('next_subject_id');
@@ -417,14 +467,10 @@ class MarkController extends Controller
         ));
     }
 
-    /** Return configured exam types; falls back to single 'Final' type for legacy behaviour. */
+    /** Return configured exam types; falls back to single 'Final' type with full weight for legacy behaviour. */
     private function getExamTypes(): array
     {
-        $types = \App\Models\SchoolSetting::get('exam_types') ?? [];
-        if (empty($types)) {
-            return [['id' => 'Final', 'label' => 'Final Exam', 'max_marks' => 100, 'order' => 1]];
-        }
-        return $types;
+        return SchoolSetting::examTypes();
     }
 
     private function grade(float $obtained, float $total): string

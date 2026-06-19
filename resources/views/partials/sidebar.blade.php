@@ -146,6 +146,8 @@
         </div>
         @endcanany
 
+        @php($isTeacherUser = auth()->check() && auth()->user()->hasRole('Teacher'))
+
         <!-- Classes Dropdown -->
         @canany('classes.view')
         <div class="relative">
@@ -183,6 +185,8 @@
                     <i class="fas fa-list w-4 text-center"></i>
                     <span>All Classes</span>
                 </a>
+
+                @if(!$isTeacherUser)
                 <a href="/admin/class-categories"
                 @click="handleLinkClick()"
                 :class="{
@@ -213,6 +217,7 @@
                     <i class="fas fa-stream w-4 text-center"></i>
                     <span>Streams</span>
                 </a>
+                @endif
             </div>
         </div>
         @endcanany
@@ -232,6 +237,7 @@
         @endcanany
 
 
+        @if(!$isTeacherUser)
         <a href="/admin/announcements"
            @click="handleLinkClick()"
            :class="{
@@ -242,6 +248,7 @@
             <i class="fas fa-book w-5 text-center"></i>
             <span class="font-medium">Announce</span>
         </a>
+        @endif
 
 
         <!-- Marks Dropdown (Only if has permission) -->

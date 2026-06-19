@@ -243,6 +243,56 @@
             </div>
         </div>
 
+        <!-- Admission Information -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-envelope mr-2 text-maroon"></i>
+                Admission Information
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Optional: Mark student as admitted and assign admission details</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Admitted Checkbox -->
+                <div class="md:col-span-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="is_admitted" value="1" {{ old('is_admitted') ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-maroon shadow-sm focus:border-maroon focus:ring-maroon">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Mark as Admitted</span>
+                    </label>
+                </div>
+
+                <!-- Admission Number -->
+                <div>
+                    <label for="admission_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Admission Number <span class="text-gray-500">(Optional)</span>
+                    </label>
+                    <input type="text" name="admission_number" id="admission_number" 
+                           value="{{ old('admission_number') }}"
+                           placeholder="e.g. ADM-2026-001"
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-maroon focus:border-transparent dark:bg-gray-700 dark:text-white @error('admission_number') border-red-500 @enderror">
+                    @error('admission_number')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Admission Date -->
+                <div>
+                    <label for="admission_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Admission Date <span class="text-gray-500">(Optional)</span>
+                    </label>
+                    <input type="date" name="admission_date" id="admission_date" 
+                           value="{{ old('admission_date', date('Y-m-d')) }}"
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-maroon focus:border-transparent dark:bg-gray-700 dark:text-white @error('admission_date') border-red-500 @enderror">
+                    @error('admission_date')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+            <p class="mt-3 text-xs text-blue-600 dark:text-blue-400 flex items-center">
+                <i class="fas fa-info-circle mr-1"></i>
+                Admission letters are generated on-demand only when you click "Generate Admission Letter" on the student profile.
+            </p>
+        </div>
+
         <!-- Form Actions -->
         <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
             <a href="{{ route('students.index') }}"

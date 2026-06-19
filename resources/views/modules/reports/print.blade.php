@@ -328,9 +328,8 @@
                     </th>
                     @endforeach
                     @if($showTotal)
-                    <th class="center" style="min-width:65px;">Total</th>
+                    <th class="center" style="min-width:65px;">Final</th>
                     @endif
-                    <th class="center">%</th>
                     <th class="center">Grade</th>
                     <th>Remarks</th>
                 </tr>
@@ -338,18 +337,24 @@
             <tbody>
                 @foreach($subjects as $subject)
                 @php
-                    $subObt = 0; $subTot = 0;
+                    $subjectMarks = $marksGrouped[$subject->id] ?? [];
+                    $hasMarks = false;
+                    $subFinal = 0;
                     foreach ($examTypes as $et) {
-                        $mm = $marksGrouped[$subject->id][$et['id']] ?? null;
-                        if ($mm) { $subObt += (float)$mm->marks_obtained; $subTot += (float)$mm->total_marks; }
+                        $mm = $subjectMarks[$et['id']] ?? null;
+                        if ($mm) {
+                            $hasMarks = true;
+                            if ($mm->total_marks > 0) {
+                                $subFinal += ((float)$mm->marks_obtained / (float)$mm->total_marks)
+                                    * ((float)($et['weight'] ?? 100) / 100);
+                            }
+                        }
                     }
-                    $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
-                    if ($subPct !== null) {
-                        $g = grade_info($subPct);
-                        $subGrade = $g['grade'] ?? null;
-                    } else { $subGrade = null; }
-                    $firstMark = collect($marksGrouped[$subject->id] ?? [])->first();
-                    $remarks   = $firstMark->remarks ?? null;
+                    $subFinalPct = $hasMarks ? round($subFinal * 100, 1) : null;
+                    $g = $subFinalPct !== null ? grade_info($subFinalPct) : null;
+                    $subGrade = $g['grade'] ?? null;
+                    $firstMark = collect($subjectMarks)->first();
+                    $remarks   = $firstMark->remarks ?? ($g['achievement'] ?? null);
                 @endphp
                 <tr>
                     <td>{{ $subject->name }}</td>
@@ -359,10 +364,9 @@
                     @endforeach
                     @if($showTotal)
                     <td class="center" style="font-weight:600;">
-                        {{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}
+                        {{ $subFinalPct !== null ? $subFinalPct : '-' }}
                     </td>
                     @endif
-                    <td class="center">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
                     <td class="center">
                         <span class="grade-badge">{{ $subGrade ?? '-' }}</span>
                     </td>
@@ -378,14 +382,25 @@
                     @endforeach
                     @if($showTotal)
                     <td class="center" style="font-weight:600;">
-                        {{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}
+                        {{ $summary['average_percentage'] }}
                     </td>
                     @endif
-                    <td class="center">{{ $summary['average_percentage'] }}%</td>
                     <td class="center">
                         <span class="total-grade">{{ $summary['grade'] }}</span>
                     </td>
                     <td>{{ $summary['subject_count'] }} subject(s)</td>
+                </tr>
+                @php
+                    $maxTerms = is_three_term_system() ? 3 : 2;
+                    $currTerm = current_term();
+                    $nextTerm = $currTerm >= $maxTerms ? 1 : $currTerm + 1;
+                    $termDates = term_dates();
+                    $nextStart = $termDates[$nextTerm]['start_date'] ?? null;
+                    $nextEnd = $termDates[$nextTerm]['end_date'] ?? null;
+                    $colspan = 1 + count($examTypes) + ($showTotal ? 1 : 0) + 2;
+                @endphp
+                <tr>
+                    <td colspan="{{ $colspan }}">Next term begins on: <strong>{{ $nextStart ? \Illuminate\Support\Carbon::parse($nextStart)->format('M d, Y') : '-' }}</strong> — Ends on: <strong>{{ $nextEnd ? \Illuminate\Support\Carbon::parse($nextEnd)->format('M d, Y') : '-' }}</strong></td>
                 </tr>
             </tfoot>
         </table>

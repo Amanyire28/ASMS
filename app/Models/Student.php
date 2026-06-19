@@ -34,13 +34,18 @@ class Student extends Model
         'class_id',
         'enrollment_date',
         'photo',
-        'is_active'
+        'is_active',
+        'admission_number',
+        'admission_date',
+        'is_admitted'
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
         'enrollment_date' => 'date',
-        'is_active' => 'boolean'
+        'admission_date' => 'date',
+        'is_active' => 'boolean',
+        'is_admitted' => 'boolean'
     ];
 
     // Relationships
@@ -52,6 +57,23 @@ class Student extends Model
     public function marks()
     {
         return $this->hasMany(Mark::class);
+    }
+
+    /**
+     * Relationship: Student has many admission letters
+     */
+    public function admissionLetters()
+    {
+        return $this->hasMany(AdmissionLetter::class);
+    }
+
+    /**
+     * Get the most recent admission letter
+     */
+    public function latestAdmissionLetter()
+    {
+        return $this->hasOne(AdmissionLetter::class)
+            ->latest('generated_at');
     }
 
     // Accessors

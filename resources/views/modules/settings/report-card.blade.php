@@ -51,8 +51,8 @@
         @endif
 
         <div class="p-6" x-data="{
-            rows: {{ Js::from(count($examTypes) ? $examTypes : [['id'=>'Final','label'=>'Final Exam','max_marks'=>100]]) }},
-            addRow() { this.rows.push({ id: '', label: '', max_marks: 100 }); },
+            rows: {{ Js::from(count($examTypes) ? $examTypes : [['id'=>'Final','label'=>'Final Exam','max_marks'=>100,'weight'=>100,'fixed'=>true]]) }},
+            addRow() { this.rows.push({ id: '', label: '', max_marks: 100, weight: 0, fixed: false }); },
             removeRow(i) { this.rows.splice(i, 1); }
         }">
             <form action="{{ route('settings.update-exam-types') }}" method="POST">
@@ -73,6 +73,9 @@
                                 <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase w-32">
                                     Default Max Marks
                                 </th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600 text-xs uppercase w-28">
+                                    Weight (%)
+                                </th>
                                 <th class="px-4 py-2 text-center font-semibold text-gray-600 text-xs uppercase w-16">Remove</th>
                             </tr>
                         </thead>
@@ -88,7 +91,10 @@
                                                pattern="[A-Za-z0-9_\-]+"
                                                title="Letters, numbers, hyphens and underscores only"
                                                required
+                                               :readonly="row.fixed"
+                                               :class="row.fixed ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'"
                                                class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm uppercase focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <input type="hidden" :name="'exam_types['+i+'][fixed]'" :value="row.fixed ? 1 : 0">
                                     </td>
                                     <td class="px-4 py-2">
                                         <input :name="'exam_types['+i+'][label]'"
@@ -96,6 +102,8 @@
                                                placeholder="e.g. Beginning of Term"
                                                maxlength="60"
                                                required
+                                               :readonly="row.fixed"
+                                               :class="row.fixed ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'"
                                                class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                     </td>
                                     <td class="px-4 py-2">
@@ -103,19 +111,35 @@
                                                x-model.number="row.max_marks"
                                                type="number" min="1" max="1000" step="0.5"
                                                required
+                                               :readonly="row.fixed"
+                                               :class="row.fixed ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'"
+                                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="px-4 py-2">
+                                        <input :name="'exam_types['+i+'][weight]'"
+                                               x-model.number="row.weight"
+                                               type="number" min="0" max="100" step="0.1"
+                                               required
+                                               :readonly="row.fixed"
+                                               :class="row.fixed ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'"
                                                class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                     </td>
                                     <td class="px-4 py-2 text-center">
-                                        <button type="button" @click="removeRow(i)"
-                                                class="text-red-400 hover:text-red-600 transition-colors"
-                                                title="Remove exam type">
-                                            <i class="fas fa-times-circle"></i>
-                                        </button>
+                                        <template x-if="!row.fixed">
+                                            <button type="button" @click="removeRow(i)"
+                                                    class="text-red-400 hover:text-red-600 transition-colors"
+                                                    title="Remove exam type">
+                                                <i class="fas fa-times-circle"></i>
+                                            </button>
+                                        </template>
+                                        <template x-if="row.fixed">
+                                            <span class="text-gray-400" title="Final exam type cannot be removed">—</span>
+                                        </template>
                                     </td>
                                 </tr>
                             </template>
                             <tr x-show="rows.length === 0">
-                                <td colspan="5" class="px-4 py-6 text-center text-gray-400 text-sm italic">
+                                <td colspan="6" class="px-4 py-6 text-center text-gray-400 text-sm italic">
                                     No exam types defined. Add at least one below.
                                 </td>
                             </tr>
@@ -136,10 +160,22 @@
                     </button>
                 </div>
 
+                <div class="mt-2 space-y-1">
+                    @error('exam_types')
+                    <p class="text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                    @error('exam_types.*.weight')
+                    <p class="text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+                <p class="mt-2 text-xs text-gray-500">Weights must sum to 100% across all exam types.</p>
                 @error('exam_types.*.id')
                 <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
                 @enderror
                 @error('exam_types.*.label')
+                <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+                @error('exam_types.*.weight')
                 <p class="mt-2 text-xs text-red-500">{{ $message }}</p>
                 @enderror
             </form>
@@ -147,7 +183,7 @@
             <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
                 <i class="fas fa-exclamation-triangle mr-1"></i>
                 <strong>Important:</strong> Once marks are recorded, do <em>not</em> change or remove exam type codes — doing so will cause historical marks to become unlinked.
-                The default code <code class="bg-amber-100 px-1 rounded">Final</code> matches all marks entered before exam types were configured.
+                The default code <code class="bg-amber-100 px-1 rounded">Final</code> is only used as a runtime fallback for legacy marks entered before exam types were defined.
             </div>
         </div>
     </div>

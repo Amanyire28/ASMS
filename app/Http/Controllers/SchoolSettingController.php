@@ -191,7 +191,36 @@ class SchoolSettingController extends Controller
         abort_unless(auth()->user()->can('system.settings'), 403);
 
         $reportSettings = SchoolSetting::getByGroup('report')->pluck('value', 'key');
-        $examTypes = SchoolSetting::get('exam_types') ?? [];
+        $examTypes = collect(SchoolSetting::get('exam_types') ?? [])->map(function ($type) {
+            $id = trim($type['id'] ?? '');
+            if (strcasecmp($id, 'Final') === 0) {
+                return [
+                    'id' => 'Final',
+                    'label' => trim($type['label'] ?? 'Final Exam'),
+                    'max_marks' => (float) ($type['max_marks'] ?? 100),
+                    'weight' => isset($type['weight']) ? (float) $type['weight'] : 100,
+                    'fixed' => true,
+                ];
+            }
+
+            return [
+                'id' => $id,
+                'label' => trim($type['label'] ?? ''),
+                'max_marks' => (float) ($type['max_marks'] ?? 100),
+                'weight' => isset($type['weight']) ? (float) $type['weight'] : 0,
+                'fixed' => false,
+            ];
+        })->values()->toArray();
+
+        if (!collect($examTypes)->contains(fn ($t) => ($t['fixed'] ?? false) === true)) {
+            array_unshift($examTypes, [
+                'id' => 'Final',
+                'label' => 'Final Exam',
+                'max_marks' => 100,
+                'weight' => 100,
+                'fixed' => true,
+            ]);
+        }
 
         return view('modules.settings.report-card', compact('reportSettings', 'examTypes'));
     }
@@ -208,7 +237,18 @@ class SchoolSettingController extends Controller
             'exam_types.*.id'        => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9_-]+$/'],
             'exam_types.*.label'     => 'required|string|max:60',
             'exam_types.*.max_marks' => 'required|numeric|min:1|max:1000',
+            'exam_types.*.weight'    => 'required|numeric|min:0|max:100',
+            'exam_types.*.fixed'     => 'nullable|boolean',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $types = collect($request->exam_types ?? [])
+                ->reject(fn ($t) => isset($t['fixed']) && (bool) $t['fixed'])
+                ->map(fn ($t) => (float) ($t['weight'] ?? 0));
+            if ($types->isNotEmpty() && abs($types->sum() - 100) > 0.01) {
+                $validator->errors()->add('exam_types', 'Exam type weights must sum to 100% among the additional exam types.');
+            }
+        });
 
         if ($validator->fails()) {
             return back()
@@ -218,11 +258,13 @@ class SchoolSettingController extends Controller
         }
 
         $types = collect($request->exam_types ?? [])
+            ->reject(fn ($t) => isset($t['fixed']) && (bool) $t['fixed'])
             ->values()
             ->map(fn ($t, $i) => [
                 'id'        => trim($t['id']),
                 'label'     => trim($t['label']),
                 'max_marks' => (float) $t['max_marks'],
+                'weight'    => (float) $t['weight'],
                 'order'     => $i + 1,
             ])
             ->toArray();
@@ -301,7 +343,12 @@ class SchoolSettingController extends Controller
 
         // Save grade thresholds if provided (store as JSON)
         $provided = $request->input('grade_thresholds', []);
-        $existing = json_decode(SchoolSetting::get('grade_thresholds') ?? 'null', true) ?? [];
+        $existing = SchoolSetting::get('grade_thresholds') ?? [];
+        if (is_string($existing)) {
+            $existing = json_decode($existing, true) ?? [];
+        } elseif (!is_array($existing)) {
+            $existing = [];
+        }
         $defaults = ['A' => 70, 'B' => 60, 'C' => 50, 'D' => 40, 'E' => 30];
 
         // Build clean thresholds using provided values or existing/defaults

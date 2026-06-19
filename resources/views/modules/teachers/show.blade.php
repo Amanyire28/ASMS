@@ -649,6 +649,19 @@
             .then(data => {
                 if (data.success) {
                     showNotification(data.message, 'success');
+                    // Close modal if open
+                    const modal = document.getElementById('teacherModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        // Reload page after 1.5 seconds to show notification
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
                 } else {
                     showNotification(data.message || 'Error resetting password', 'error');
                 }

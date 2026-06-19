@@ -6,24 +6,30 @@
             <i class="fas fa-tachometer-alt text-lg"></i>
             <span class="text-xs mt-1">Home</span>
         </a>
+        @canany(['students.view', 'students.view-detail'])
         <a href="{{ route('students.index') }}"
            class="nav-item flex flex-col items-center p-2 transition-colors {{ request()->routeIs('students.*') ? 'text-maroon' : 'text-gray-500 dark:text-gray-400' }}"
            data-route="students">
             <i class="fas fa-users text-lg"></i>
             <span class="text-xs mt-1">Students</span>
         </a>
+        @endcanany
+        @can('marks.entry')
         <a href="{{ route('marks.entry.form') }}"
            class="nav-item flex flex-col items-center p-2 transition-colors {{ request()->routeIs('marks.entry*') ? 'text-maroon' : 'text-gray-500 dark:text-gray-400' }}"
            data-route="marks">
             <i class="fas fa-edit text-lg"></i>
             <span class="text-xs mt-1">Marks</span>
         </a>
+        @endcan
+        @canany(['teachers.view', 'teachers.view-detail'])
         <a href="{{ route('teachers.index') }}"
            class="nav-item flex flex-col items-center p-2 transition-colors {{ request()->routeIs('teachers.*') ? 'text-maroon' : 'text-gray-500 dark:text-gray-400' }}"
            data-route="teachers">
             <i class="fas fa-chalkboard text-lg"></i>
             <span class="text-xs mt-1">Teachers</span>
         </a>
+        @endcanany
         <button onclick="openMobileSidebar()" class="flex flex-col items-center p-2 text-gray-500 dark:text-gray-400 hover:text-maroon transition-colors">
             <i class="fas fa-bars text-lg"></i>
             <span class="text-xs mt-1">Menu</span>

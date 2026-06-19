@@ -20,6 +20,7 @@ class ForcePasswordChange
         // Routes that should be accessible even when password change is required
         $excludedRoutes = [
             'password.change',
+            'password.change.update',
             'password.update',
             'logout',
             'two-factor.*',

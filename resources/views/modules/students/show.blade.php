@@ -12,6 +12,12 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Student ID: <span class="font-mono font-semibold">{{ $student->student_id }}</span></p>
     </div>
     <div class="flex items-center gap-3">
+        @can('students.create')
+        <a href="{{ route('admissions.letter.create', $student) }}"
+           class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
+            <i class="fas fa-envelope mr-2"></i>Admission Letter
+        </a>
+        @endcan
         @can('students.edit')
         <a href="{{ route('students.edit', $student) }}"
            hx-get="{{ route('students.edit', $student) }}"

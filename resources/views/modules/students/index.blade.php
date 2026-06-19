@@ -6,15 +6,28 @@
 @endif
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Students</h1>
-    <a href="{{ route('students.create') }}"
-       hx-get="{{ route('students.create') }}"
-       hx-target="#page-content"
-       hx-push-url="true"
-       hx-indicator="#loading-indicator"
-       class="inline-flex items-center px-4 py-2 bg-maroon hover:bg-maroon-dark text-white rounded-lg transition-colors">
-        <i class="fas fa-plus mr-2"></i>
-        Add Student
-    </a>
+    @can('students.create')
+    <div class="flex gap-2">
+        <a href="{{ route('students.import') }}"
+           hx-get="{{ route('students.import') }}"
+           hx-target="#page-content"
+           hx-push-url="true"
+           hx-indicator="#loading-indicator"
+           class="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+            <i class="fas fa-file-import mr-2"></i>
+            Import Students
+        </a>
+        <a href="{{ route('students.create') }}"
+           hx-get="{{ route('students.create') }}"
+           hx-target="#page-content"
+           hx-push-url="true"
+           hx-indicator="#loading-indicator"
+           class="inline-flex items-center px-4 py-2 bg-maroon hover:bg-maroon-dark text-white rounded-lg transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Add Student
+        </a>
+    </div>
+    @endcan
 </div>
 
 <!-- Students Table -->

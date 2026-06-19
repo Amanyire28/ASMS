@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\SchoolSetting;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -58,17 +59,45 @@ class ReportGeneration extends Model
             ];
         }
 
-        $totalObtained = $marks->sum('marks_obtained');
-        $totalPossible = $marks->sum('total_marks');
+        $examTypes = SchoolSetting::examTypes();
+        $marksBySubject = $marks->groupBy('subject_id');
+        $subjectScores = [];
+
+        foreach ($marksBySubject as $subjectId => $subjectMarks) {
+            $subjectScores[] = $this->calculateSubjectFinal($subjectMarks, $examTypes);
+        }
+
+        $totalObtained = array_sum($subjectScores);
+        $totalPossible = count($subjectScores) * 100;
         $averagePercentage = $totalPossible > 0 ? ($totalObtained / $totalPossible) * 100 : 0;
 
         return [
-            'total_marks' => $totalObtained,
-            'total_possible' => $totalPossible,
+            'total_marks' => round($totalObtained, 2),
+            'total_possible' => round($totalPossible, 2),
             'average_percentage' => round($averagePercentage, 2),
             'grade' => $this->calculateGrade($averagePercentage),
-            'subject_count' => $marks->pluck('subject_id')->unique()->count()
+            'subject_count' => $marksBySubject->keys()->count()
         ];
+    }
+
+    private function calculateSubjectFinal($subjectMarks, array $examTypes): float
+    {
+        $marksByType = $subjectMarks->keyBy('exam_type');
+        $subjectFinal = 0.0;
+
+        foreach ($examTypes as $examType) {
+            $mark = $marksByType[$examType['id']] ?? null;
+            if ($mark && $mark->total_marks > 0) {
+                $subjectPct = (float) $mark->marks_obtained / (float) $mark->total_marks;
+            } else {
+                $subjectPct = 0;
+            }
+
+            $weight = isset($examType['weight']) ? ((float) $examType['weight'] / 100) : 1.0;
+            $subjectFinal += $subjectPct * $weight;
+        }
+
+        return $subjectFinal * 100;
     }
 
     private function calculateGrade($percentage)

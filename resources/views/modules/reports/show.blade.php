@@ -143,9 +143,8 @@
                                         <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase leading-tight">{{ $et['label'] }}<br><span class="font-normal text-gray-400 normal-case">/ {{ $et['max_marks'] }}</span></th>
                                     @endforeach
                                     @if($showTotal)
-                                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Total</th>
+                                        <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Final</th>
                                     @endif
-                                    <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">%</th>
                                     <th class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Grade</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
                                 </tr>
@@ -153,24 +152,24 @@
                             <tbody class="bg-white divide-y divide-gray-100">
                                 @foreach($subjects as $subject)
                                     @php
-                                        $subObt = 0; $subTot = 0;
+                                        $subjectMarks = $marksGrouped[$subject->id] ?? [];
+                                        $hasMarks = false;
+                                        $subFinal = 0;
                                         foreach ($examTypes as $et) {
-                                            $mm = $marksGrouped[$subject->id][$et['id']] ?? null;
-                                            if ($mm) { $subObt += (float)$mm->marks_obtained; $subTot += (float)$mm->total_marks; }
+                                            $mm = $subjectMarks[$et['id']] ?? null;
+                                            if ($mm) {
+                                                $hasMarks = true;
+                                                if ($mm->total_marks > 0) {
+                                                    $subFinal += ((float)$mm->marks_obtained / (float)$mm->total_marks)
+                                                        * ((float)($et['weight'] ?? 100) / 100);
+                                                }
+                                            }
                                         }
-                                        $subPct = $subTot > 0 ? round($subObt / $subTot * 100, 1) : null;
-                                        if ($subPct !== null) {
-                                            if ($subPct >= 90) $subGrade = 'A+';
-                                            elseif ($subPct >= 80) $subGrade = 'A';
-                                            elseif ($subPct >= 70) $subGrade = 'B+';
-                                            elseif ($subPct >= 60) $subGrade = 'B';
-                                            elseif ($subPct >= 50) $subGrade = 'C+';
-                                            elseif ($subPct >= 40) $subGrade = 'C';
-                                            elseif ($subPct >= 30) $subGrade = 'D';
-                                            else $subGrade = 'F';
-                                        } else { $subGrade = null; }
-                                        $firstMark = collect($marksGrouped[$subject->id] ?? [])->first();
-                                        $remarks   = $firstMark->remarks ?? null;
+                                        $subFinalPct = $hasMarks ? round($subFinal * 100, 1) : null;
+                                        $gradeInfo = $subFinalPct !== null ? grade_info($subFinalPct) : null;
+                                        $subGrade = $gradeInfo['grade'] ?? null;
+                                        $firstMark = collect($subjectMarks)->first();
+                                        $remarks = $firstMark->remarks ?? ($gradeInfo['achievement'] ?? null);
                                     @endphp
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-3 font-medium text-gray-900">{{ $subject->name }}</td>
@@ -179,26 +178,45 @@
                                             <td class="px-3 py-3 text-center text-gray-700">{{ $mm !== null ? $mm->marks_obtained : '-' }}</td>
                                         @endforeach
                                         @if($showTotal)
-                                            <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $subTot > 0 ? $subObt . ' / ' . $subTot : '-' }}</td>
+                                            <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $subFinalPct !== null ? $subFinalPct : '-' }}</td>
                                         @endif
-                                        <td class="px-3 py-3 text-center font-medium text-gray-700">{{ $subPct !== null ? $subPct . '%' : '-' }}</td>
                                         <td class="px-3 py-3 text-center font-semibold text-gray-900">{{ $subGrade ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $remarks ?? '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50">
+                                @php $overallRemark = grade_remark($summary['average_percentage']); @endphp
                                 <tr>
                                     <td class="px-4 py-3 font-semibold text-gray-800">TOTAL / AVERAGE</td>
                                     @foreach($examTypes as $et)
                                         <td class="px-3 py-3 text-center text-gray-400">-</td>
                                     @endforeach
                                     @if($showTotal)
-                                        <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['total_marks'] }} / {{ $summary['total_possible'] }}</td>
+                                        <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}</td>
                                     @endif
-                                    <td class="px-3 py-3 text-center font-semibold text-gray-800">{{ $summary['average_percentage'] }}%</td>
                                     <td class="px-3 py-3 text-center font-bold text-gray-900">{{ $summary['grade'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $summary['subject_count'] }} subject(s)</td>
+                                    <td class="px-4 py-3 text-sm text-gray-500">
+                                        {{ $overallRemark ?? '-' }}
+                                        <div class="text-xs text-gray-400 mt-1">{{ $summary['subject_count'] }} subject(s)</div>
+                                    </td>
+                                </tr>
+                                @php
+                                    $maxTerms = is_three_term_system() ? 3 : 2;
+                                    $currTerm = current_term();
+                                    $nextTerm = $currTerm >= $maxTerms ? 1 : $currTerm + 1;
+                                    $termDates = term_dates();
+                                    $nextStart = $termDates[$nextTerm]['start_date'] ?? null;
+                                    $nextEnd = $termDates[$nextTerm]['end_date'] ?? null;
+                                    $colspan = 1 + count($examTypes) + ($showTotal ? 1 : 0) + 2;
+                                @endphp
+                                <tr>
+                                    <td class="px-4 py-3 font-semibold text-gray-800" colspan="{{ $colspan }}">
+                                        <div class="flex justify-between items-center">
+                                            <div>Next term begins on: <span class="font-bold">{{ $nextStart ? \Illuminate\Support\Carbon::parse($nextStart)->format('M d, Y') : '-' }}</span></div>
+                                            <div>Ends on: <span class="font-bold">{{ $nextEnd ? \Illuminate\Support\Carbon::parse($nextEnd)->format('M d, Y') : '-' }}</span></div>
+                                        </div>
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>

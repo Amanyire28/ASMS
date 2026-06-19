@@ -173,7 +173,7 @@
                 @endif
 
                 <!-- Form -->
-                <form method="POST" action="{{ route('password.update') }}" id="passwordForm" class="space-y-2">
+                <form method="POST" action="{{ route('password.change.update') }}" id="passwordForm" class="space-y-2">
                     @csrf
 
                     <!-- Current Password -->

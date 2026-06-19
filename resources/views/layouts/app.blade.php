@@ -436,7 +436,7 @@
 
             updateDropdownsFromURL(path) {
                 // Don't close all dropdowns automatically - keep current state
-                // Only update based on URL if needed
+                // Only update based on URL if needed 
 
                 // If we're already on a page that should have a dropdown open, ensure it's open
                 if (!this.sidebarCollapsed) {
