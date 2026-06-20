@@ -261,10 +261,12 @@ class ReportController extends Controller
         }
 
         $examTypes = SchoolSetting::examTypes();
-        $zipPath   = tempnam(sys_get_temp_dir(), 'reports_') . '.zip';
-        $zip       = new ZipArchive();
 
-        if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+        // Use storage/app as temp dir to avoid Windows temp-path issues
+        $zipPath = storage_path('app/mass_report_' . uniqid() . '.zip');
+        $zip     = new ZipArchive();
+
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             return back()->with('error', 'Could not create ZIP file. Please try again.');
         }
 
@@ -272,7 +274,6 @@ class ReportController extends Controller
         $skipped   = 0;
 
         foreach ($students as $student) {
-            // Check marks exist
             $hasMarks = Mark::where([
                 'student_id'    => $student->id,
                 'term'          => $validated['term'],
@@ -284,7 +285,6 @@ class ReportController extends Controller
                 continue;
             }
 
-            // Get or create report record
             $report = ReportGeneration::firstOrCreate(
                 [
                     'student_id'    => $student->id,
@@ -300,7 +300,7 @@ class ReportController extends Controller
             );
 
             $report->load(['student.class', 'generatedBy']);
-            $marks  = $report->getMarks();
+            $marks   = $report->getMarks();
             $summary = $report->calculateSummary($marks);
 
             $marksGrouped = [];
@@ -310,7 +310,6 @@ class ReportController extends Controller
             $subjects = $marks->sortBy('subject.name')
                 ->pluck('subject')->filter()->unique('id')->values();
 
-            // Render PDF
             $pdf = Pdf::loadView('modules.reports.pdf', compact(
                 'report', 'marks', 'summary', 'examTypes', 'marksGrouped', 'subjects'
             ))->setPaper('a4', 'portrait');
@@ -325,7 +324,7 @@ class ReportController extends Controller
         $zip->close();
 
         if ($generated === 0) {
-            unlink($zipPath);
+            @unlink($zipPath);
             return back()->with('error', "No reports generated. None of the {$skipped} student(s) had marks for {$validated['term']} {$validated['academic_year']}.");
         }
 
@@ -333,8 +332,18 @@ class ReportController extends Controller
             str_replace([' ', '/'], ['_', '-'], $validated['term']) . '_' .
             str_replace('/', '-', $validated['academic_year']) . '.zip';
 
-        return response()->download($zipPath, $zipName, [
-            'Content-Type' => 'application/zip',
-        ])->deleteFileAfterSend(true);
+        // Stream and delete manually — avoids Windows file-lock issues with deleteFileAfterSend
+        return response()->streamDownload(function () use ($zipPath) {
+            $stream = fopen($zipPath, 'rb');
+            while (!feof($stream)) {
+                echo fread($stream, 8192);
+            }
+            fclose($stream);
+            @unlink($zipPath);
+        }, $zipName, [
+            'Content-Type'              => 'application/zip',
+            'Content-Length'            => filesize($zipPath),
+            'Content-Disposition'       => 'attachment; filename="' . $zipName . '"',
+        ]);
     }
 }
