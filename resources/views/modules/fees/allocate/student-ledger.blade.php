@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="mb-8 flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Fee Ledger</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Payment Ledger</h1>
             <p class="text-gray-600 mt-1">{{ $student->full_name }} ({{ $student->student_id ?? 'N/A' }})</p>
             <p class="text-sm text-gray-500">Class: {{ $student->class->name ?? 'N/A' }}</p>
         </div>
@@ -35,13 +35,13 @@
                 <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Total Amount Due</div>
                     <div class="text-2xl font-bold text-blue-600 mt-2">
-                        {{ number_format($ledger->sum(function($item) { return $item['debit']; }), 2) }}
+                        {{ number_format($totalDue, 2) }}
                     </div>
                 </div>
                 <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
                     <div class="text-sm text-gray-600 uppercase tracking-wide">Amount Paid</div>
                     <div class="text-2xl font-bold text-green-600 mt-2">
-                        {{ number_format($ledger->sum(function($item) { return $item['credit']; }), 2) }}
+                        {{ number_format($totalPaid, 2) }}
                     </div>
                 </div>
                 <div class="bg-white rounded-lg shadow-md p-6 border-l-4 {{ $currentBalance > 0 ? 'border-red-600' : 'border-green-600' }}">
@@ -66,10 +66,10 @@
         </div>
     </div>
 
-    <!-- Transaction Ledger -->
+    <!-- Payment History -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
         <div class="px-6 py-4 bg-gray-50 border-b">
-            <h2 class="text-lg font-semibold text-gray-900">Transaction History</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Payment History</h2>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -270,130 +270,5 @@
         </form>
     </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const feeCheckboxes = document.querySelectorAll('.fee-checkbox');
-        const payAmountInputs = document.querySelectorAll('.pay-amount');
-        const selectedCountEl = document.getElementById('selectedCount');
-        const totalToPayEl = document.getElementById('totalToPay');
-        const remainingBalanceEl = document.getElementById('remainingBalance');
-        const submitBtn = document.getElementById('submitBtn');
-        const form = document.getElementById('paymentFormEl');
-
-        // Handle select all checkbox
-        selectAllCheckbox.addEventListener('change', function() {
-            feeCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-                togglePaymentInput(checkbox);
-            });
-            updateSummary();
-        });
-
-        // Handle individual fee checkboxes
-        feeCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                togglePaymentInput(this);
-                updateSelectAllCheckbox();
-                updateSummary();
-            });
-        });
-
-        // Handle payment amount inputs
-        payAmountInputs.forEach(input => {
-            input.addEventListener('input', function() {
-                updateSummary();
-            });
-        });
-
-        function togglePaymentInput(checkbox) {
-            const feeId = checkbox.dataset.feeId;
-            const input = document.querySelector(`.pay-amount[data-fee-id="${feeId}"]`);
-            const outstanding = parseFloat(checkbox.dataset.outstanding);
-
-            if (checkbox.checked) {
-                input.disabled = false;
-                input.value = outstanding; // Auto-fill with outstanding amount
-            } else {
-                input.disabled = true;
-                input.value = '';
-            }
-        }
-
-        function updateSelectAllCheckbox() {
-            const allChecked = Array.from(feeCheckboxes).every(cb => cb.checked);
-            const someChecked = Array.from(feeCheckboxes).some(cb => cb.checked);
-            selectAllCheckbox.checked = allChecked;
-            selectAllCheckbox.indeterminate = someChecked && !allChecked;
-        }
-
-        function updateSummary() {
-            let selectedCount = 0;
-            let totalToPay = 0;
-
-            feeCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    selectedCount++;
-                    const feeId = checkbox.dataset.feeId;
-                    const amount = parseFloat(document.querySelector(`.pay-amount[data-fee-id="${feeId}"]`).value) || 0;
-                    totalToPay += amount;
-                }
-            });
-
-            selectedCountEl.textContent = selectedCount;
-            totalToPayEl.textContent = totalToPay.toFixed(2);
-
-            const currentBalance = {{ $currentBalance }};
-            const newBalance = currentBalance - totalToPay;
-            remainingBalanceEl.textContent = newBalance.toFixed(2);
-            remainingBalanceEl.className = 'text-2xl font-bold ' + (newBalance > 0 ? 'text-red-600' : 'text-green-600');
-
-            submitBtn.disabled = selectedCount === 0;
-            submitBtn.className = 'px-6 py-2 text-white rounded-lg transition font-medium ' + 
-                (selectedCount === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700');
-        }
-
-        // Handle form submission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const selectedFees = [];
-            feeCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    const feeId = checkbox.dataset.feeId;
-                    const amount = parseFloat(document.querySelector(`.pay-amount[data-fee-id="${feeId}"]`).value);
-                    if (amount > 0) {
-                        selectedFees.push({ fee_id: feeId, amount: amount });
-                    }
-                }
-            });
-
-            if (selectedFees.length === 0) {
-                alert('Please select at least one fee and enter an amount to pay.');
-                return;
-            }
-
-            // Create hidden inputs for each fee payment
-            selectedFees.forEach((fee, index) => {
-                const feeInput = document.createElement('input');
-                feeInput.type = 'hidden';
-                feeInput.name = `fees[${index}][fee_id]`;
-                feeInput.value = fee.fee_id;
-                form.appendChild(feeInput);
-
-                const amountInput = document.createElement('input');
-                amountInput.type = 'hidden';
-                amountInput.name = `fees[${index}][amount]`;
-                amountInput.value = fee.amount;
-                form.appendChild(amountInput);
-            });
-
-            form.submit();
-        });
-
-        // Initialize summary
-        updateSummary();
-    });
-    </script>
 </div>
 @endsection

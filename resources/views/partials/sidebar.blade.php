@@ -393,7 +393,7 @@
                     <span>Fees</span>
                 </a>
 
-                <a href="/admin/fees/schedules/view"
+                <a href="{{ route('fees.schedules') }}"
                    @click="handleLinkClick()"
                    :class="{
                        'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees/schedules/view'),
@@ -413,6 +413,17 @@
                    class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
                     <i class="fas fa-money-bill w-4 text-center"></i>
                     <span>Allocate Fees</span>
+                </a>
+
+                <a href="{{ route('fees.reports.payment-status') }}"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/fees/reports/payment-status'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/fees/reports/payment-status')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-file-invoice-dollar w-4 text-center"></i>
+                    <span>Payment Status Report</span>
                 </a>
 
                 <a href="/admin/fees/reports/collection"

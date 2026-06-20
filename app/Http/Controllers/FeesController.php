@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class FeesController extends Controller
 {
@@ -162,7 +163,9 @@ class FeesController extends Controller
         ]);
 
         $schedulesCreated = 0;
+        $studentsMatched = 0;
         $assignmentsCreated = 0;
+        $assignmentsSkipped = 0;
 
         // Build fee_amounts array (fee_id => amount)
         $feeAmountsArray = [];
@@ -194,6 +197,8 @@ class FeesController extends Controller
                 ->where('is_active', true)
                 ->get();
 
+            $studentsMatched += $students->count();
+
             foreach ($students as $student) {
                 // Create individual StudentFee for each fee type
                 foreach ($validated['fee_ids'] as $feeId) {
@@ -213,13 +218,15 @@ class FeesController extends Controller
                             'due_date' => $validated['due_date'],
                         ]);
                         $assignmentsCreated++;
+                    } else {
+                        $assignmentsSkipped++;
                     }
                 }
             }
         }
 
         return redirect()->route('fees.schedules')
-            ->with('success', "Fee schedules created for " . count($validated['class_ids']) . " class(es) and assigned to {$assignmentsCreated} student records");
+            ->with('success', "Fee schedules saved for {$schedulesCreated} class(es). Active students found: {$studentsMatched}. New fee records created: {$assignmentsCreated}. Existing fee records skipped: {$assignmentsSkipped}.");
     }
 
     /**
@@ -389,7 +396,7 @@ class FeesController extends Controller
     }
 
     /**
-     * Show ledger for specific student - all fees and payments
+     * Show ledger for specific student - payments only
      */
     public function allocateFeesForStudent(Student $student): View
     {
@@ -399,35 +406,26 @@ class FeesController extends Controller
             ->where('student_id', $student->id)
             ->get();
 
+        $totalDue = $studentFees->sum('amount');
         $ledger = [];
-        $balance = 0;
+        $totalPaid = 0;
 
-        // Build transaction history
+        // Build payment-only transaction history
         foreach ($studentFees as $studentFee) {
-            // Add the fee assignment as a debit
-            $ledger[] = [
-                'date' => $studentFee->created_at,
-                'description' => 'Fee: ' . $studentFee->fee->name,
-                'debit' => $studentFee->amount,
-                'credit' => 0,
-                'type' => 'fee',
-            ];
-            $balance += $studentFee->amount;
-
-            // Add payments as credits
             $payments = Payment::where('student_fee_id', $studentFee->id)
+                ->with('paymentMethod')
                 ->orderBy('payment_date')
                 ->get();
 
             foreach ($payments as $payment) {
                 $ledger[] = [
                     'date' => $payment->payment_date,
-                    'description' => 'Payment: ' . ($payment->paymentMethod->name ?? 'N/A'),
+                    'description' => 'Payment for ' . $studentFee->fee->name . ' (' . ($payment->paymentMethod->name ?? 'N/A') . ')',
                     'debit' => 0,
                     'credit' => $payment->amount,
                     'type' => 'payment',
                 ];
-                $balance -= $payment->amount;
+                $totalPaid += $payment->amount;
             }
         }
 
@@ -436,20 +434,20 @@ class FeesController extends Controller
             return $a['date'] <=> $b['date'];
         });
 
-        // Calculate running balance
-        $runningBalance = 0;
+        // Running balance starts from total charges and reduces with each payment.
+        $runningBalance = $totalDue;
         foreach ($ledger as &$entry) {
             $runningBalance += $entry['debit'] - $entry['credit'];
             $entry['running_balance'] = $runningBalance;
         }
 
         $fees = Fee::active()->get();
-        $currentBalance = $balance;
+        $currentBalance = $totalDue - $totalPaid;
 
         // Convert ledger array to collection for view
         $ledger = collect($ledger);
 
-        return view('modules.fees.allocate.student-ledger', compact('student', 'ledger', 'fees', 'currentBalance', 'studentFees'));
+        return view('modules.fees.allocate.student-ledger', compact('student', 'ledger', 'fees', 'currentBalance', 'studentFees', 'totalDue', 'totalPaid'));
     }
 
     /**
@@ -475,7 +473,7 @@ class FeesController extends Controller
             'payment_date' => 'required|date',
             'reference' => 'nullable|string|max:255',
             'fees' => 'required|array',
-            'fees.*.fee_id' => 'required|exists:fees,id',
+            'fees.*.fee_id' => 'required|exists:student_fees,id',
             'fees.*.amount' => 'required|numeric|min:0.01',
         ]);
 
@@ -485,21 +483,17 @@ class FeesController extends Controller
 
         // Record payment for each selected fee
         foreach ($fees as $feeData) {
-            $fee = Fee::findOrFail($feeData['fee_id']);
-            $amount = $feeData['amount'];
+            $studentFee = StudentFee::with('fee')
+                ->where('id', $feeData['fee_id'])
+                ->where('student_id', $student->id)
+                ->firstOrFail();
 
-            // Check if student fee exists, if not create it
-            $studentFee = StudentFee::firstOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'fee_id' => $fee->id,
-                ],
-                [
-                    'amount' => 0,
-                    'term' => config('school.current_term', '1'),
-                    'due_date' => now()->addMonth(),
-                ]
-            );
+            $amount = (float) $feeData['amount'];
+            $outstanding = max(0, (float) $studentFee->amount - (float) $studentFee->payments()->sum('amount'));
+
+            if ($amount <= 0 || $amount > $outstanding) {
+                continue;
+            }
 
             // Record payment
             Payment::create([
@@ -507,12 +501,18 @@ class FeesController extends Controller
                 'amount' => $amount,
                 'payment_date' => $request->input('payment_date'),
                 'payment_method_id' => $request->input('payment_method_id'),
+                'receipt_number' => Payment::generateReceiptNumber(),
                 'transaction_reference' => $request->input('reference'),
-                'user_id' => auth()->id(),
+                'recorded_by' => auth()->id(),
             ]);
 
             $totalPaid += $amount;
             $feesCount++;
+        }
+
+        if ($feesCount === 0) {
+            return redirect()->route('fees.allocate-for-student', $student)
+                ->with('error', 'No valid payment was recorded. Ensure selected amounts do not exceed outstanding balances.');
         }
 
         return redirect()->route('fees.allocate-for-student', $student)
@@ -568,7 +568,7 @@ class FeesController extends Controller
             }
         }
 
-        return redirect()->route('fees.assign')
+        return redirect()->route('fees.allocate-fees')
             ->with('success', "Fees assigned to {$count} student records");
     }
 
@@ -701,6 +701,104 @@ class FeesController extends Controller
             'collectionByMethod',
             'dateFrom',
             'dateTo'
+        ));
+    }
+
+    /**
+     * View student payment status report
+     */
+    public function paymentStatusReport(Request $request): View
+    {
+        $this->authorize('system.settings');
+
+        $selectedClassId = $request->input('class_id');
+        $selectedStatus = $request->input('status', 'all');
+            $classes = ClassModel::active()->ordered()->get();
+
+        $reportRows = Student::with(['class', 'studentFees.payments'])
+            ->where('is_active', true)
+            ->when($selectedClassId, function ($query) use ($selectedClassId) {
+                $query->where('class_id', $selectedClassId);
+            })
+            ->get()
+            ->map(function ($student) {
+                $studentFees = $student->studentFees;
+
+                $totalPayable = $studentFees->sum(function ($studentFee) {
+                    if ($studentFee->waived) {
+                        return 0;
+                    }
+
+                    return max(0, (float) $studentFee->amount - (float) ($studentFee->discount_amount ?? 0));
+                });
+
+                $totalPaid = $studentFees->sum(function ($studentFee) {
+                    return (float) $studentFee->amount_paid;
+                });
+
+                $remainingBalance = $studentFees->sum(function ($studentFee) {
+                    return (float) $studentFee->outstanding;
+                });
+
+                $hasOverdue = $studentFees->contains(function ($studentFee) {
+                    return $studentFee->isOverdue();
+                });
+
+                if ($totalPayable <= 0) {
+                    $status = 'no-fees';
+                } elseif ($remainingBalance <= 0) {
+                    $status = 'fully-paid';
+                } elseif ($hasOverdue) {
+                    $status = 'defaulted';
+                } elseif ($totalPaid > 0) {
+                    $status = 'partial';
+                } else {
+                    $status = 'unpaid';
+                }
+
+                return [
+                    'student' => $student,
+                    'class_name' => $student->class->name ?? 'N/A',
+                    'total_payable' => $totalPayable,
+                    'total_paid' => $totalPaid,
+                    'remaining_balance' => $remainingBalance,
+                    'status' => $status,
+                    'fees_count' => $studentFees->count(),
+                ];
+            })
+            ->filter(function ($row) use ($selectedStatus) {
+                return $selectedStatus === 'all' || $row['status'] === $selectedStatus;
+            })
+            ->values();
+
+        $summary = [
+            'students_count' => $reportRows->count(),
+            'total_payable' => $reportRows->sum('total_payable'),
+            'total_paid' => $reportRows->sum('total_paid'),
+            'remaining_balance' => $reportRows->sum('remaining_balance'),
+            'fully_paid_count' => $reportRows->where('status', 'fully-paid')->count(),
+            'defaulted_count' => $reportRows->where('status', 'defaulted')->count(),
+        ];
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 20;
+        $paginatedRows = new LengthAwarePaginator(
+            $reportRows->forPage($page, $perPage)->values(),
+            $reportRows->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('modules.fees.reports.status', compact(
+            'classes',
+            'selectedClassId',
+            'selectedStatus',
+            'summary',
+            'paginatedRows'
         ));
     }
 

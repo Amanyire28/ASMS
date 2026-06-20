@@ -23,8 +23,45 @@ class FeeSchedule extends Model
         'amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'due_date' => 'date',
-        'fee_amounts' => 'array',
     ];
+
+    public function getFeeAmountsAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (empty($value)) {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return [];
+    }
+
+    public function setFeeAmountsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['fee_amounts'] = json_encode($value);
+            return;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $this->attributes['fee_amounts'] = json_last_error() === JSON_ERROR_NONE
+                ? json_encode($decoded)
+                : $value;
+            return;
+        }
+
+        $this->attributes['fee_amounts'] = json_encode([]);
+    }
 
     /**
      * Relationship: FeeSchedule belongs to ClassModel

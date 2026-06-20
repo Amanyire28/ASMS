@@ -383,7 +383,8 @@
                 marks: false,
                 reports: false,
                 system: false,
-                classes: false
+                classes: false,
+                fees: false
             },
             sidebarCollapsed: false,
             currentPath: window.location.pathname,
@@ -446,6 +447,7 @@
                         marks: path.startsWith('/admin/marks'),
                         reports: path.startsWith('/admin/report-card'),
                         system: path.startsWith('/admin/system'),
+                        fees: path.startsWith('/admin/fees'),
                         classes: path.startsWith('/admin/classes') ||
                                 path.startsWith('/admin/class-levels') ||
                                 path.startsWith('/admin/streams') ||
@@ -525,6 +527,8 @@
                             this.dropdowns.reports = true;
                         } else if (href.startsWith('/admin/system')) {
                             this.dropdowns.system = true;
+                        } else if (href.startsWith('/admin/fees')) {
+                            this.dropdowns.fees = true;
                         } else if (href.startsWith('/admin/classes') ||
                                   href.startsWith('/admin/class-levels') ||
                                   href.startsWith('/admin/streams') ||
@@ -716,6 +720,160 @@
         window.toggleSidebar = function() {
             document.dispatchEvent(new CustomEvent('toggle-sidebar'));
         };
+
+        function initFeeLedgerPaymentForm() {
+            const form = document.getElementById('paymentFormEl');
+            if (!form || form.dataset.bound === '1') {
+                return;
+            }
+
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const feeCheckboxes = form.querySelectorAll('.fee-checkbox');
+            const payAmountInputs = form.querySelectorAll('.pay-amount');
+            const selectedCountEl = document.getElementById('selectedCount');
+            const totalToPayEl = document.getElementById('totalToPay');
+            const remainingBalanceEl = document.getElementById('remainingBalance');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!selectAllCheckbox || !selectedCountEl || !totalToPayEl || !remainingBalanceEl || !submitBtn) {
+                return;
+            }
+
+            form.dataset.bound = '1';
+
+            function getAmountInputByFeeId(feeId) {
+                return form.querySelector(`.pay-amount[data-fee-id="${feeId}"]`);
+            }
+
+            function togglePaymentInput(checkbox) {
+                const feeId = checkbox.dataset.feeId;
+                const input = getAmountInputByFeeId(feeId);
+                if (!input) {
+                    return;
+                }
+
+                const outstanding = parseFloat(checkbox.dataset.outstanding) || 0;
+                if (checkbox.checked) {
+                    input.disabled = false;
+                    input.value = outstanding;
+                } else {
+                    input.disabled = true;
+                    input.value = '';
+                }
+            }
+
+            function updateSelectAllCheckbox() {
+                const allChecked = Array.from(feeCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(feeCheckboxes).some(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            }
+
+            function updateSummary() {
+                let selectedCount = 0;
+                let totalToPay = 0;
+
+                feeCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        selectedCount++;
+                        const amountInput = getAmountInputByFeeId(checkbox.dataset.feeId);
+                        const amount = parseFloat(amountInput?.value) || 0;
+                        totalToPay += amount;
+                    }
+                });
+
+                selectedCountEl.textContent = selectedCount;
+                totalToPayEl.textContent = totalToPay.toFixed(2);
+
+                const currentBalance = parseFloat(remainingBalanceEl.dataset.originalBalance || remainingBalanceEl.textContent.replace(/,/g, '')) || 0;
+                const newBalance = currentBalance - totalToPay;
+                remainingBalanceEl.textContent = newBalance.toFixed(2);
+                remainingBalanceEl.className = 'text-2xl font-bold ' + (newBalance > 0 ? 'text-red-600' : 'text-green-600');
+
+                submitBtn.disabled = selectedCount === 0;
+                submitBtn.className = 'px-6 py-2 text-white rounded-lg transition font-medium ' +
+                    (selectedCount === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700');
+            }
+
+            if (!remainingBalanceEl.dataset.originalBalance) {
+                remainingBalanceEl.dataset.originalBalance = (remainingBalanceEl.textContent || '').replace(/,/g, '').trim();
+            }
+
+            selectAllCheckbox.addEventListener('change', function() {
+                feeCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                    togglePaymentInput(checkbox);
+                });
+                updateSummary();
+            });
+
+            feeCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    togglePaymentInput(this);
+                    updateSelectAllCheckbox();
+                    updateSummary();
+                });
+            });
+
+            payAmountInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const max = parseFloat(this.max) || 0;
+                    const value = parseFloat(this.value) || 0;
+                    if (value > max) {
+                        this.value = max;
+                    }
+                    if (value < 0) {
+                        this.value = 0;
+                    }
+                    updateSummary();
+                });
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                form.querySelectorAll('input[data-generated="fee-payment"]').forEach(input => input.remove());
+
+                const selectedFees = [];
+                feeCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        const amountInput = getAmountInputByFeeId(checkbox.dataset.feeId);
+                        const amount = parseFloat(amountInput?.value) || 0;
+                        if (amount > 0) {
+                            selectedFees.push({ fee_id: checkbox.dataset.feeId, amount });
+                        }
+                    }
+                });
+
+                if (selectedFees.length === 0) {
+                    alert('Please select at least one fee and enter an amount to pay.');
+                    return;
+                }
+
+                selectedFees.forEach((fee, index) => {
+                    const feeInput = document.createElement('input');
+                    feeInput.type = 'hidden';
+                    feeInput.name = `fees[${index}][fee_id]`;
+                    feeInput.value = fee.fee_id;
+                    feeInput.setAttribute('data-generated', 'fee-payment');
+                    form.appendChild(feeInput);
+
+                    const amountInput = document.createElement('input');
+                    amountInput.type = 'hidden';
+                    amountInput.name = `fees[${index}][amount]`;
+                    amountInput.value = fee.amount;
+                    amountInput.setAttribute('data-generated', 'fee-payment');
+                    form.appendChild(amountInput);
+                });
+
+                form.submit();
+            });
+
+            updateSummary();
+        }
+
+        document.addEventListener('DOMContentLoaded', initFeeLedgerPaymentForm);
+        window.addEventListener('spa:rendered', initFeeLedgerPaymentForm);
 
 
 

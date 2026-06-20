@@ -629,6 +629,9 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     Route::get('fees/reports/collection', [FeesController::class, 'collectionReport'])
         ->middleware('permission:system.settings')
         ->name('fees.reports.collection');
+    Route::get('fees/reports/payment-status', [FeesController::class, 'paymentStatusReport'])
+        ->middleware('permission:system.settings')
+        ->name('fees.reports.payment-status');
 
     // Student Account Statement
     Route::get('students/{student}/statement', [FeesController::class, 'accountStatement'])

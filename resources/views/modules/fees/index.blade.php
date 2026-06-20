@@ -101,12 +101,21 @@
                 </div>
             </div>
         </a>
-        <a href="{{ route('fees.assign') }}" class="px-6 py-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition">
+        <a href="{{ route('fees.allocate-fees') }}" class="px-6 py-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition">
             <div class="flex items-center">
                 <i class="fas fa-user-check text-green-600 text-2xl mr-4"></i>
                 <div>
-                    <h3 class="font-semibold text-gray-900">Assign Fees</h3>
-                    <p class="text-sm text-gray-600">Assign fees to students</p>
+                    <h3 class="font-semibold text-gray-900">Allocate Fees</h3>
+                    <p class="text-sm text-gray-600">Record payments and manage student balances</p>
+                </div>
+            </div>
+        </a>
+        <a href="{{ route('fees.reports.payment-status') }}" class="px-6 py-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+            <div class="flex items-center">
+                <i class="fas fa-file-invoice-dollar text-blue-600 text-2xl mr-4"></i>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Payment Status Report</h3>
+                    <p class="text-sm text-gray-600">View fully paid, partial, unpaid, and defaulted students</p>
                 </div>
             </div>
         </a>
