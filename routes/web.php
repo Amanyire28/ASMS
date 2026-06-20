@@ -538,6 +538,8 @@ Route::post('/teachers/{teacher}/update-assignments', [TeacherController::class,
     // Report Management Routes
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/create', [ReportController::class, 'create'])->name('reports.create');
+    Route::get('reports/mass', [ReportController::class, 'massReports'])->name('reports.mass');
+    Route::post('reports/mass-download', [ReportController::class, 'massDownload'])->name('reports.mass-download');
     Route::post('reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     Route::get('reports/view-or-generate', [ReportController::class, 'viewOrGenerate'])->name('reports.view-or-generate');
     Route::get('reports/{report}', [ReportController::class, 'show'])->name('reports.show');

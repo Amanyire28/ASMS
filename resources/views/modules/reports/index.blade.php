@@ -12,14 +12,24 @@
             <p class="text-sm text-gray-500 mt-1">Manage and view all generated student reports</p>
         </div>
         @canany('reports.view')
-        <a href="{{ route('reports.create') }}"
-           hx-get="{{ route('reports.create') }}"
-           hx-target="#page-content"
-           hx-push-url="true"
-           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-            <i class="fas fa-plus"></i>
-            Generate Report
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('reports.mass') }}"
+               hx-get="{{ route('reports.mass') }}"
+               hx-target="#page-content"
+               hx-push-url="true"
+               class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-file-archive"></i>
+                Mass Download
+            </a>
+            <a href="{{ route('reports.create') }}"
+               hx-get="{{ route('reports.create') }}"
+               hx-target="#page-content"
+               hx-push-url="true"
+               class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-plus"></i>
+                Generate Report
+            </a>
+        </div>
         @endcanany
     </div>
 

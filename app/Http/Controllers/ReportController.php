@@ -9,6 +9,8 @@ use App\Models\ClassModel;
 use App\Models\Mark;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use ZipArchive;
 
 class ReportController extends Controller
 {
@@ -225,5 +227,114 @@ class ReportController extends Controller
                 'available_periods' => $periods,
             ];
         }));
+    }
+
+    // ---------------------------------------------------------------
+    // Mass Reports
+    // ---------------------------------------------------------------
+
+    /** Show the mass-download form */
+    public function massReports()
+    {
+        $classes = ClassModel::where('is_active', true)->orderBy('name')->get();
+        return view('modules.reports.mass', compact('classes'));
+    }
+
+    /** Generate all student PDFs for a class+term, zip and stream */
+    public function massDownload(Request $request)
+    {
+        $validated = $request->validate([
+            'class_id'      => 'required|exists:classes,id',
+            'term'          => 'required|string',
+            'academic_year' => 'required|string',
+            'report_type'   => 'required|in:report_card,progress_report,transcript',
+        ]);
+
+        $class = ClassModel::findOrFail($validated['class_id']);
+        $students = Student::where('class_id', $class->id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'No active students in this class.');
+        }
+
+        $examTypes = SchoolSetting::examTypes();
+        $zipPath   = tempnam(sys_get_temp_dir(), 'reports_') . '.zip';
+        $zip       = new ZipArchive();
+
+        if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+            return back()->with('error', 'Could not create ZIP file. Please try again.');
+        }
+
+        $generated = 0;
+        $skipped   = 0;
+
+        foreach ($students as $student) {
+            // Check marks exist
+            $hasMarks = Mark::where([
+                'student_id'    => $student->id,
+                'term'          => $validated['term'],
+                'academic_year' => $validated['academic_year'],
+            ])->exists();
+
+            if (!$hasMarks) {
+                $skipped++;
+                continue;
+            }
+
+            // Get or create report record
+            $report = ReportGeneration::firstOrCreate(
+                [
+                    'student_id'    => $student->id,
+                    'term'          => $validated['term'],
+                    'academic_year' => $validated['academic_year'],
+                    'report_type'   => $validated['report_type'],
+                ],
+                [
+                    'report_number' => ReportGeneration::generateReportNumber(),
+                    'generated_by'  => Auth::id(),
+                    'generated_at'  => now(),
+                ]
+            );
+
+            $report->load(['student.class', 'generatedBy']);
+            $marks  = $report->getMarks();
+            $summary = $report->calculateSummary($marks);
+
+            $marksGrouped = [];
+            foreach ($marks as $m) {
+                $marksGrouped[$m->subject_id][$m->exam_type ?? 'Final'] = $m;
+            }
+            $subjects = $marks->sortBy('subject.name')
+                ->pluck('subject')->filter()->unique('id')->values();
+
+            // Render PDF
+            $pdf = Pdf::loadView('modules.reports.pdf', compact(
+                'report', 'marks', 'summary', 'examTypes', 'marksGrouped', 'subjects'
+            ))->setPaper('a4', 'portrait');
+
+            $filename = $student->student_id . '_' .
+                str_replace([' ', '/'], ['_', '-'], $student->full_name) . '.pdf';
+
+            $zip->addFromString($filename, $pdf->output());
+            $generated++;
+        }
+
+        $zip->close();
+
+        if ($generated === 0) {
+            unlink($zipPath);
+            return back()->with('error', "No reports generated. None of the {$skipped} student(s) had marks for {$validated['term']} {$validated['academic_year']}.");
+        }
+
+        $zipName = 'Reports_' . $class->name . '_' .
+            str_replace([' ', '/'], ['_', '-'], $validated['term']) . '_' .
+            str_replace('/', '-', $validated['academic_year']) . '.zip';
+
+        return response()->download($zipPath, $zipName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 }
