@@ -528,7 +528,7 @@ public function updateBasicInfo(Request $request, Teacher $teacher)
         'first_name' => 'required|string|max:255',
         'last_name' => 'required|string|max:255',
         'other_names' => 'nullable|string|max:255',
-        'email' => 'required|email|unique:users,email,' . $teacher->id,
+        'email' => 'required|email|unique:users,email,' . $teacher->user->id,
         'phone' => 'required|string|max:20',
         'date_of_birth' => 'required|date|before:-18 years',
         'gender' => 'required|in:male,female,other',

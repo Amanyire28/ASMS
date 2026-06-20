@@ -241,7 +241,7 @@
                     <div></div>
                     <div>
                         <button type="button"
-                                onclick="nextStep(2)"
+                                onclick="nextStep(2, this)"
                                 class="px-6 py-3 bg-gradient-to-r from-maroon to-maroon-dark hover:from-maroon-dark hover:to-maroon text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
                             Next: Additional Details <i class="fas fa-arrow-right ml-2"></i>
                         </button>
@@ -362,7 +362,7 @@
                     </button>
                     <div>
                         <button type="button"
-                                onclick="nextStep(3)"
+                                onclick="nextStep(3, this)"
                                 class="px-6 py-3 bg-gradient-to-r from-maroon to-maroon-dark hover:from-maroon-dark hover:to-maroon text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
                             Next: Class Assignments <i class="fas fa-arrow-right ml-2"></i>
                         </button>
@@ -418,7 +418,7 @@
                 </button>
                 <div>
                     <button type="button"
-                            onclick="saveClassAssignments()"
+                            onclick="saveClassAssignments(this)"
                             class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl mr-3">
                         Save & Continue
                     </button>
@@ -463,7 +463,7 @@
                 </button>
                 <div>
                     <button type="button"
-                            onclick="saveSubjectAssignments()"
+                            onclick="saveSubjectAssignments(this)"
                             class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
                         <i class="fas fa-check mr-2"></i>
                         Complete Registration
@@ -576,11 +576,11 @@
     }
 
     // Navigate to next step
-    function nextStep(step) {
+    function nextStep(step, btn) {
         if (step === 2) {
-            saveBasicInfo();
+            saveBasicInfo(btn);
         } else if (step === 3) {
-            saveAdditionalDetails();
+            saveAdditionalDetails(btn);
         } else {
             showStep(step);
         }
@@ -592,7 +592,7 @@
     }
 
     // Save Basic Information
-    function saveBasicInfo() {
+    function saveBasicInfo(btn) {
         const form = document.getElementById('basicInfoForm');
         const formData = new FormData(form);
 
@@ -602,6 +602,8 @@
             const year = new Date().getFullYear();
             formData.set('employee_id', `STAFF-${year}-${randomNum}`);
         }
+
+        setLoading(btn, true);
 
         fetch('{{ route("teachers.store.basic") }}', {
             method: 'POST',
@@ -633,11 +635,12 @@
         .catch(error => {
             console.error('Error:', error);
             showToast('error', 'Network error. Please try again.');
-        });
+        })
+        .finally(() => setLoading(btn, false));
     }
 
     // Save Additional Details
-    function saveAdditionalDetails() {
+    function saveAdditionalDetails(btn) {
         const form = document.getElementById('additionalDetailsForm');
         const formData = new FormData(form);
         const photoInput = document.getElementById('photo');
@@ -645,6 +648,8 @@
         if (photoInput.files[0]) {
             formData.append('photo', photoInput.files[0]);
         }
+
+        setLoading(btn, true);
 
         fetch('{{ route("teachers.store.additional") }}', {
             method: 'POST',
@@ -673,15 +678,16 @@
         .catch(error => {
             console.error('Error:', error);
             showToast('error', 'Network error. Please try again.');
-        });
+        })
+        .finally(() => setLoading(btn, false));
     }
 
     // Save Class Assignments
-    function saveClassAssignments() {
+    function saveClassAssignments(btn) {
         const classCheckboxes = document.querySelectorAll('.class-checkbox:checked');
         const classAssignments = [];
 
-        classCheckboxes.forEach((checkbox, index) => {
+        classCheckboxes.forEach((checkbox) => {
             const classId = checkbox.value;
             const classTeacherCheckbox = checkbox.closest('.flex.items-center.justify-between')
                 .querySelector('.class-teacher-checkbox');
@@ -692,6 +698,8 @@
                 is_class_teacher: isClassTeacher ? 1 : 0
             });
         });
+
+        setLoading(btn, true);
 
         fetch('{{ route("teachers.store.classes") }}', {
             method: 'POST',
@@ -717,14 +725,16 @@
         .catch(error => {
             console.error('Error:', error);
             showToast('error', 'Network error. Please try again.');
-        });
+        })
+        .finally(() => setLoading(btn, false));
     }
 
         // Save Subject Assignments AND send notification
-
-        function saveSubjectAssignments() {
+        function saveSubjectAssignments(btn) {
             const subjectCheckboxes = document.querySelectorAll('input[name="subject_ids[]"]:checked');
             const subjectIds = Array.from(subjectCheckboxes).map(cb => cb.value);
+
+            setLoading(btn, true);
 
             fetch('{{ route("teachers.store.subjects") }}', {
                 method: 'POST',
@@ -741,16 +751,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // ✅ Notification already sent by backend
                     console.log('✅ Teacher created! Notification sent to', data.users_notified || 0, 'users');
 
-                    // Show success message
                     document.getElementById('step4Content').classList.add('hidden');
                     document.getElementById('successMessage').classList.remove('hidden');
                     document.getElementById('successEmployeeId').textContent = document.getElementById('employee_id').value;
                     document.getElementById('successEmail').textContent = document.getElementById('email').value || data.email;
 
-                    // Add notification info if available
                     if (data.users_notified) {
                         const notificationInfo = document.createElement('div');
                         notificationInfo.className = 'mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800';
@@ -771,8 +778,22 @@
             .catch(error => {
                 console.error('Error:', error);
                 showToast('error', 'Network error. Please try again.');
-            });
+            })
+            .finally(() => setLoading(btn, false));
         }
+
+    // Helper: toggle loading state on a button
+    function setLoading(btn, loading) {
+        if (!btn) return;
+        if (loading) {
+            btn.disabled = true;
+            btn._originalHTML = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin h-5 w-5 inline mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Processing...';
+        } else {
+            btn.disabled = false;
+            if (btn._originalHTML) btn.innerHTML = btn._originalHTML;
+        }
+    }
 
 
 
