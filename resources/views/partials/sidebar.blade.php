@@ -346,6 +346,19 @@
                 </a>
                 @endcanany
 
+                @canany('reports.view')
+                <a href="/admin/reports/mass"
+                   @click="handleLinkClick()"
+                   :class="{
+                       'bg-blue-700 !text-white font-semibold': isExactActive('/admin/reports/mass'),
+                       'text-gray-900 hover:bg-blue-200': !isExactActive('/admin/reports/mass')
+                   }"
+                   class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                    <i class="fas fa-file-archive w-4 text-center"></i>
+                    <span>Mass Download</span>
+                </a>
+                @endcanany
+
                 @canany('system.settings')
                 <a href="/admin/settings/report-card"
                    @click="handleLinkClick()"

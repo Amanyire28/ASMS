@@ -272,6 +272,19 @@
                         <span>Report Cards</span>
                     </a>
                     @endcan
+
+                    @can('reports.view')
+                    <a href="/admin/reports/mass"
+                       @click="handleLinkClick()"
+                       :class="{
+                           'bg-white !text-maroon': isExactActive('/admin/reports/mass'),
+                           'text-white/90 hover:bg-white/20': !isExactActive('/admin/reports/mass')
+                       }"
+                       class="flex items-center space-x-3 p-2 rounded text-sm transition-colors">
+                        <i class="fas fa-file-archive w-4 text-center"></i>
+                        <span>Mass Download</span>
+                    </a>
+                    @endcan
                 </div>
             </div>
             @endcan
