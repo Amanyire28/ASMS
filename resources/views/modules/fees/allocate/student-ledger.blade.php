@@ -128,7 +128,15 @@
 
     <!-- Record Payment Form -->
     <div id="paymentForm" class="bg-white rounded-lg shadow-md p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Record Payments - Select Fees to Pay</h2>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            <h2 class="text-2xl font-bold text-gray-900">Record Payments - Select Fees to Pay</h2>
+            @if ($currentBalance > 0)
+                <button type="button" id="payFullBtn"
+                    class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm whitespace-nowrap">
+                    <i class="fas fa-bolt mr-2"></i> Pay Full Balance ({{ number_format($currentBalance, 2) }})
+                </button>
+            @endif
+        </div>
 
         <form action="{{ route('fees.record-allocation') }}" method="POST" id="paymentFormEl">
             @csrf
@@ -163,6 +171,8 @@
                                                 data-fee-id="{{ $sf->id }}" 
                                                 data-fee-name="{{ $sf->fee->name }}"
                                                 data-outstanding="{{ $outstanding }}">
+                                            {{-- Hidden fee_id submitted only when checkbox is enabled via JS --}}
+                                            <input type="hidden" class="fee-id-input" name="fees[{{ $sf->id }}][fee_id]" value="{{ $sf->id }}" disabled>
                                         </td>
                                         <td class="px-4 py-3 text-gray-900 font-medium">{{ $sf->fee->name }}</td>
                                         <td class="px-4 py-3 text-right text-gray-600">{{ number_format($sf->amount, 2) }}</td>
@@ -171,6 +181,7 @@
                                         <td class="px-4 py-3 text-right">
                                             <input type="number" step="0.01" min="0" 
                                                 class="pay-amount w-24 px-3 py-2 border border-gray-300 rounded text-right text-sm"
+                                                name="fees[{{ $sf->id }}][amount]"
                                                 data-fee-id="{{ $sf->id }}"
                                                 max="{{ $outstanding }}"
                                                 placeholder="0.00"
@@ -255,7 +266,7 @@
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p class="text-sm text-blue-800">
                     <i class="fas fa-info-circle mr-2"></i>
-                    <strong>How to use:</strong> Check the boxes for the fees you want to record payments for, enter the amount for each fee (up to the outstanding amount), then click "Record Payment".
+                    <strong>How to use:</strong> Check the boxes for the fees you want to record payments for, enter the amount for each fee (up to the outstanding amount), then click "Record Payment". Or use the <strong>Pay Full Balance</strong> button above to instantly fill in all outstanding amounts.
                 </p>
             </div>
 
@@ -271,4 +282,97 @@
     </div>
 
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll   = document.getElementById('selectAll');
+    const totalToPayEl     = document.getElementById('totalToPay');
+    const selectedCountEl  = document.getElementById('selectedCount');
+    const remainingBalanceEl = document.getElementById('remainingBalance');
+    const totalBalance = {{ $currentBalance }};
+
+    function getCheckboxes() {
+        return document.querySelectorAll('.fee-checkbox');
+    }
+
+    function getAmountInput(feeId) {
+        return document.querySelector(`.pay-amount[data-fee-id="${feeId}"]`);
+    }
+
+    function recalculate() {
+        let total = 0;
+        let count = 0;
+        getCheckboxes().forEach(cb => {
+            if (cb.checked) {
+                const input = getAmountInput(cb.dataset.feeId);
+                const val = parseFloat(input?.value) || 0;
+                total += val;
+                count++;
+            }
+        });
+        totalToPayEl.textContent    = total.toFixed(2);
+        selectedCountEl.textContent = count;
+        remainingBalanceEl.textContent = Math.max(0, totalBalance - total).toFixed(2);
+    }
+
+    function enableFeeRow(checkbox, enabled) {
+        const input = getAmountInput(checkbox.dataset.feeId);
+        const hiddenId = checkbox.closest('td')?.querySelector('.fee-id-input');
+        if (input) {
+            input.disabled = !enabled;
+            if (!enabled) input.value = '';
+        }
+        if (hiddenId) hiddenId.disabled = !enabled;
+        recalculate();
+    }
+
+    // Per-row checkbox toggle
+    getCheckboxes().forEach(cb => {
+        cb.addEventListener('change', function () {
+            enableFeeRow(this, this.checked);
+            // Keep select-all in sync
+            const all = getCheckboxes();
+            selectAll.checked = [...all].every(c => c.checked);
+            selectAll.indeterminate = !selectAll.checked && [...all].some(c => c.checked);
+        });
+    });
+
+    // Amount input changes recalculate totals
+    document.querySelectorAll('.pay-amount').forEach(input => {
+        input.addEventListener('input', recalculate);
+    });
+
+    // Select all toggle
+    selectAll?.addEventListener('change', function () {
+        getCheckboxes().forEach(cb => {
+            cb.checked = this.checked;
+            enableFeeRow(cb, this.checked);
+        });
+    });
+
+    // Pay Full Balance button — select every fee row and fill max amount
+    document.getElementById('payFullBtn')?.addEventListener('click', function () {
+        getCheckboxes().forEach(cb => {
+            cb.checked = true;
+            const input = getAmountInput(cb.dataset.feeId);
+            if (input) {
+                input.disabled = false;
+                input.value = parseFloat(cb.dataset.outstanding).toFixed(2);
+            }
+            const hiddenId = cb.closest('td')?.querySelector('.fee-id-input');
+            if (hiddenId) hiddenId.disabled = false;
+        });
+        if (selectAll) selectAll.checked = true;
+        recalculate();
+        // Scroll to payment details so admin can pick method & date
+        document.querySelector('.bg-gray-50.border.rounded-lg')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Initial state
+    recalculate();
+});
+</script>
+@endpush
+
 @endsection
