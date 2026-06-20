@@ -66,9 +66,17 @@
                 {{-- Academic Year --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Academic Year <span class="text-red-500">*</span></label>
-                    <input type="text" name="academic_year" id="academic_year" required
-                           placeholder="e.g. 2025/2026"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select name="academic_year" id="academic_year" required
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select year…</option>
+                        @php
+                            $y = (int) date('Y');
+                            $yearOptions = [($y-1).'-'.$y, $y.'-'.($y+1), ($y+1).'-'.($y+2)];
+                        @endphp
+                        @foreach($yearOptions as $yr)
+                        <option value="{{ $yr }}">{{ $yr }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Report Type --}}
@@ -158,7 +166,7 @@
 
     classEl.addEventListener('change', loadPreview);
     termEl.addEventListener('change', loadPreview);
-    yearEl.addEventListener('input', loadPreview);
+    yearEl.addEventListener('change', loadPreview);
 
     form.addEventListener('submit', function () {
         btn.disabled = true;

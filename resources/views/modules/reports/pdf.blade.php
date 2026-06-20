@@ -5,7 +5,7 @@
     <title>{{ $report->report_number }}</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; color: #111827; background: #fff; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #111827; background: #fff; }
         .page { width: 100%; padding: 14mm 14mm; }
 
         /* Header */

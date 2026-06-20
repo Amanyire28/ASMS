@@ -243,6 +243,9 @@ class ReportController extends Controller
     /** Generate all student PDFs for a class+term, zip and stream */
     public function massDownload(Request $request)
     {
+        // PDF generation for large classes can be slow — extend execution time
+        set_time_limit(300);
+
         $validated = $request->validate([
             'class_id'      => 'required|exists:classes,id',
             'term'          => 'required|string',
@@ -312,7 +315,10 @@ class ReportController extends Controller
 
             $pdf = Pdf::loadView('modules.reports.pdf', compact(
                 'report', 'marks', 'summary', 'examTypes', 'marksGrouped', 'subjects'
-            ))->setPaper('a4', 'portrait');
+            ))->setPaper('a4', 'portrait')
+              ->setOption('isFontSubsettingEnabled', false)
+              ->setOption('isHtml5ParserEnabled', true)
+              ->setOption('defaultFont', 'helvetica');
 
             $filename = $student->student_id . '_' .
                 str_replace([' ', '/'], ['_', '-'], $student->full_name) . '.pdf';
